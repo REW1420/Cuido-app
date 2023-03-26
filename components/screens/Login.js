@@ -16,12 +16,14 @@ import SPACING from "../config/SPACING";
 import React from "react";
 import { Dimensions } from "react-native";
 
+import Icon from "react-native-vector-icons/Ionicons";
+
 const { width, height } = Dimensions.get("screen");
 
-export default function App() {
+export default function Login({ navigation }) {
   return (
     <>
-      <ScrollView>
+      <ScrollView style={styles.initB}>
         <View style={styles.secondary_backgroud}></View>
 
         <View style={styles.primary_backgroud}>
@@ -37,27 +39,61 @@ export default function App() {
           >
             <Image
               style={styles.Logo}
-              source={require("../assets/CuidoLogo150x300.png")}
+              source={require("../assets/Cuido.png")}
             />
           </View>
 
-          <TextInput
-            style={styles.inputTxt}
-            placeholder="Correo"
-            placeholderTextColor={COLORS.input_text}
-          />
-          <TextInput
-            style={styles.inputTxt}
-            placeholder="Contraseña"
-            secureTextEntry={true}
-            placeholderTextColor={COLORS.input_text}
-          />
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.button_text}>Iniciar sesión</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.button_text}>Registrarse</Text>
-          </TouchableOpacity>
+          <View style={styles.textContainer}>
+            <Icon name="mail" size={20} color="black" style={{ margin: 5 }} />
+            <Text style={styles.hint_text}>Correo</Text>
+          </View>
+
+          <View style={styles.container}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.inputTxt}
+                placeholder="ejemplo@dominio.com"
+                placeholderTextColor={COLORS.input_text}
+              />
+            </View>
+          </View>
+
+          <View style={styles.textContainer}>
+            <Icon name="key" size={20} color="black" style={{ margin: 5 }} />
+            <Text style={styles.hint_text}>Contraseña</Text>
+          </View>
+
+          <View style={styles.container}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.inputTxt}
+                placeholder="****"
+                placeholderTextColor={COLORS.input_text}
+              />
+            </View>
+          </View>
+
+          <View style={styles.container}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                navigation.navigate("MainNav");
+              }}
+            >
+              <Text style={styles.button_text}>Iniciar sesión</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.container}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                navigation.navigate("sing-up");
+              }}
+            >
+              <Text style={styles.button_text}>Registrarse</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </>
@@ -72,6 +108,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     width: "80%",
     color: COLORS.input_text,
+    textAlign: "center",
+    borderColor: COLORS.input_color,
+    alignSelf: "center",
   },
   secondary_backgroud: {
     backgroundColor: COLORS.secondary_backgroud,
@@ -85,8 +124,8 @@ const styles = StyleSheet.create({
     bottom: SPACING * 3,
   },
   Logo: {
-    width: "115%",
-    height: 160,
+    width: 205,
+    height: 105,
     alignSelf: "center",
     marginBottom: 5,
   },
@@ -101,12 +140,38 @@ const styles = StyleSheet.create({
     padding: 10,
     justifyContent: "center",
     alignItems: "center",
-    margin:10,
+    margin: 10,
     width: "80%",
   },
   button_text: {
     color: COLORS.primary_buton_text,
     fontWeight: "bold",
     fontSize: 16,
+  },
+  textContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 10,
+    flexDirection: "row",
+  },
+  hint_text: {
+    color: COLORS.hint_text,
+    fontSize: 25,
+    textAlign: "center",
+  },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  inputContainer: {
+    width: "100%",
+
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  initB: {
+    backgroundColor: COLORS.primary_backgroud,
   },
 });

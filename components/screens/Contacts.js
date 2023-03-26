@@ -10,15 +10,20 @@ import {
   StyleSheet,
   Button,
 } from "react-native";
-
 import COLORS from "../config/COLORS";
 import SPACING from "../config/SPACING";
+
 import React, { useState } from "react";
 import { Dimensions } from "react-native";
 import { SearchBar } from "@rneui/themed";
 
-export default function Store() {
+const { width, height } = Dimensions.get("screen");
+
+export default function Contacts({ navigation }) {
   const [searchQuery, setSearchQuery] = useState("");
+
+
+
   return (
     <>
       <ScrollView style={{ backgroundColor: COLORS.primary_backgroud }}>
@@ -47,7 +52,7 @@ export default function Store() {
 
         <View style={styles.container}>
           <View style={styles.inputContainer}>
-            <Text> Store </Text>
+            <Text> Contacts </Text>
           </View>
         </View>
       </ScrollView>
@@ -67,18 +72,6 @@ const styles = StyleSheet.create({
     bottom: SPACING * 3,
   },
 
-  inputContainer: {
-    width: "100%",
-
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  containerTopLeft: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    flex: 1,
-  },
   container: {
     flex: 1,
     alignItems: "center",
@@ -97,5 +90,11 @@ const styles = StyleSheet.create({
   },
   input: {
     color: "black",
+  },
+  containerTopLeft: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    flex: 1,
   },
 });

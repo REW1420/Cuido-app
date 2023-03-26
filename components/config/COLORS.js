@@ -7,5 +7,6 @@ export default {
  input_text : '#671517',
  secondary_text : '#71747C',
  primary_color: '#671517',
- primary_buton_text : '#FFFFFF'
+ primary_buton_text : '#FFFFFF',
+ hint_text : '#C55861'
 }
