@@ -12,8 +12,8 @@ import {
 } from "react-native";
 import COLORS from "../config/COLORS";
 import SPACING from "../config/SPACING";
-
-import React from "react";
+import Toast from "react-native-toast-message";
+import React, { useState } from "react";
 import { Dimensions } from "react-native";
 
 import Icon from "react-native-vector-icons/Ionicons";
@@ -21,6 +21,29 @@ import Icon from "react-native-vector-icons/Ionicons";
 const { width, height } = Dimensions.get("screen");
 
 export default function Login({ navigation }) {
+  const [user, setUser] = useState("");
+  const [password, setPassword] = useState("");
+
+  const showToastError = () => {
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2:'Los campos no pueden estar vacios',
+      visibilityTime: 3000,
+      position: "top",
+    });
+  };
+
+  const showToastInvalidCredentiasls =()=>{
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2:'Credenciales incorrectas',
+      visibilityTime: 3000,
+      position: "top",
+    });
+  }
+
   return (
     <>
       <ScrollView style={styles.initB}>
@@ -54,6 +77,7 @@ export default function Login({ navigation }) {
                 style={styles.inputTxt}
                 placeholder="ejemplo@dominio.com"
                 placeholderTextColor={COLORS.input_text}
+                onChangeText={(text) => {setUser(text)}}
               />
             </View>
           </View>
@@ -69,6 +93,7 @@ export default function Login({ navigation }) {
                 style={styles.inputTxt}
                 placeholder="****"
                 placeholderTextColor={COLORS.input_text}
+                onChangeText={(text) => {setPassword(text)}}
               />
             </View>
           </View>
@@ -77,7 +102,17 @@ export default function Login({ navigation }) {
             <TouchableOpacity
               style={styles.button}
               onPress={() => {
-                navigation.navigate("MainNav");
+                if(user !== '' && password !== ''){
+
+                  if( user == 'admin' && password=='admin') {
+                    navigation.navigate('AdminNav')
+                  } else {
+                      showToastInvalidCredentiasls()
+                  }
+                  navigation.navigate("MainNav");
+                } else {
+                      showToastError()
+                }
               }}
             >
               <Text style={styles.button_text}>Iniciar sesión</Text>
@@ -95,6 +130,7 @@ export default function Login({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
+        <Toast ref={(ref) => Toast.setRef(ref)} />
       </ScrollView>
     </>
   );
