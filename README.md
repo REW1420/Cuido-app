@@ -14,7 +14,7 @@
 <h3>Integrantes</h3>
 <ul>
   <li>William Ernesto Ramos Valladares - RV200068</li>
-  <li>Javier Eliseo Guiterrez Flores - GUITERREZ</li>
+  <li>Javier Eliseo Guiterrez Flores - GF220089</li>
   <li>Kenya Elizabrth Parada Palma - PP220664</li>
 </ul>
 
