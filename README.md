@@ -2,7 +2,7 @@
  <p align="left">
    <img src="https://img.shields.io/badge/STATUS-developing-brightgreen)">
   <img src="https://img.shields.io/badge/COVERAGE-30%25-brightgreen)">
- <img src=" https://img.shields.io/badge/VERSION-2.0-blue">
+ <img src="https://img.shields.io/badge/VERSION-2.0-blue">
 
  
    </p>
