@@ -20,8 +20,37 @@ import { ListItem } from "react-native-elements";
 import Icon from "react-native-vector-icons/Ionicons";
 import productData from "../assets/data/productsData";
 import Modal from "react-native-modal";
-import { remove } from "lodash";
+import { propertyOf, remove } from "lodash";
 import Toast from "react-native-toast-message";
+
+import { collection, onSnapshot } from "firebase/firestore";
+
+import { database, storage } from "../utils/firebase";
+
+//get documents from firestore
+function useProductData() {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    const snapshot = onSnapshot(
+      collection(database, "products"),
+      (querySnapshot) => {
+        const products = [];
+        querySnapshot.forEach((doc) => {
+          products.push({
+            id: doc.id,
+            data: doc.data(),
+          });
+        });
+        setData(products);
+      }
+    );
+
+    return () => snapshot();
+  }, []);
+
+  return data;
+}
 
 export default function Store() {
   const [number, setNumber] = useState(1);
@@ -40,6 +69,9 @@ export default function Store() {
   const handleSnapPress = useCallback((index) => {
     bottomSheetRef.current?.snapToIndex(index);
   }, []);
+
+  //use the data
+  const productData2 = useProductData();
 
   const addDataToCart = () => {
     //update the ID
@@ -140,14 +172,17 @@ export default function Store() {
         </View>
 
         <View>
-          {productData.map((item, i) => (
+          {productData2.map((item, i) => (
             <View key={i} style={styles.productsContainer}>
               <View>
-                <Image style={styles.image} source={{ uri: item.image }} />
+                <Image
+                  style={styles.image}
+                  source={{ uri: item.data.logoURL }}
+                />
                 <View style={styles.contentProducts}>
                   <View style={styles.text}>
-                    <Text style={styles.name}>{item.name}</Text>
-                    <Text style={styles.price}>${item.unit_price}</Text>
+                    <Text style={styles.name}>{item.data.productName}</Text>
+                    <Text style={styles.price}>${item.data.price}</Text>
                   </View>
                   <View>
                     <TouchableOpacity
@@ -265,7 +300,11 @@ export default function Store() {
         </BottomSheetView>
       </BottomSheet>
 
-      <Modal isVisible={isModalVisible}>
+      <Modal
+        isVisible={isModalVisible}
+        onBackButtonPress={toggleModal}
+        onBackdropPress={toggleModal}
+      >
         <ScrollView style={{ marginTop: 90 }}>
           <View
             style={{
@@ -321,7 +360,11 @@ export default function Store() {
         </ScrollView>
       </Modal>
 
-      <Modal isVisible={isModalNegativeVisible}>
+      <Modal
+        isVisible={isModalNegativeVisible}
+        onBackButtonPress={toggleModalError}
+        onBackdropPress={toggleModalError}
+      >
         <View
           style={{
             backgroundColor: "white",
@@ -350,11 +393,10 @@ export default function Store() {
                   shadowOpacity: 0.05,
                   shadowRadius: 3.05,
                   elevation: 4,
-                  width: 300
-                 
+                  width: 300,
                 }}
               >
-                <Text style={{ textAlign: "center" , fontSize:15}}>
+                <Text style={{ textAlign: "center", fontSize: 15 }}>
                   Tu carrito está vacío. ¡Agrega algunos artículos para comenzar
                   a comprar!
                 </Text>

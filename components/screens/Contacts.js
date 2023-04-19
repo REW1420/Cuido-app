@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import COLORS from "../config/COLORS";
 import SPACING from "../config/SPACING";
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef , useEffect} from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Dimensions } from "react-native";
 import { SearchBar } from "@rneui/themed";
@@ -24,12 +24,54 @@ import Icon from "react-native-vector-icons/Ionicons";
 
 const { width, height } = Dimensions.get("screen");
 
-export default function Contacts({ navigation }) {
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
+//firebase dependecies
+import { database, storage } from "../utils/firebase";
+//references name of the storage and firebase
+const firestoreName = "contacts";
+
+//get documents from firestore
+function useContactData() {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    const snapshot = onSnapshot(
+      collection(database, firestoreName),
+      (querySnapshot) => {
+        const contacs = [];
+        querySnapshot.forEach((doc) => {
+          contacs.push({
+            id: doc.id,
+            data: doc.data(),
+          });
+        });
+        setData(contacs);
+      }
+    );
+
+    return () => snapshot();
+  }, []);
+
+  return data;
+}
+
+export default function Contacts() {
   const [bitem, setItem] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const bottomSheetRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const snapPoints = ["45%"];
+
+  //use of contact data
+  const contactData = useContactData()
+  console.log(contactData)
 
   const handleSnapPress = useCallback((index) => {
     bottomSheetRef.current?.snapToIndex(index);
@@ -60,7 +102,7 @@ export default function Contacts({ navigation }) {
           </View>
         </View>
         <View>
-          {contactsTest.map((item, i) => (
+          {contactData.map((item, i) => (
             <ListItem
               key={i}
               bottomDivider
@@ -70,75 +112,76 @@ export default function Contacts({ navigation }) {
               }}
               onPress={() => {
                 setItem(item), handleSnapPress(0);
+                console.log(item,'click item')
               }}
             >
-              <Avatar source={{ uri: item.logo }} />
+              <Avatar source={{ uri: item.data.logoURL }} />
               <ListItem.Content>
-                <ListItem.Title>{item.name}</ListItem.Title>
+                <ListItem.Title>{item.data.contactName}</ListItem.Title>
               </ListItem.Content>
               <ListItem.Chevron />
             </ListItem>
           ))}
         </View>
       </ScrollView>
+
       <BottomSheet
-  index={-1}
-  enablePanDownToClose={true}
-  ref={bottomSheetRef}
-  snapPoints={snapPoints}
-  onDismiss={() => {
-    setIsOpen(false);
-    setItem([]);
-  }}
->
-  <BottomSheetView style={styles.bottomSheetContainer}>
-    <View style={styles.details_logo_container}>
-      <Image style={styles.details_logo} source={{ uri: bitem.logo }} />
-    </View>
-
-    <View style={[styles.textContainer, { marginTop: 20 }]}>
-      <Icon
-        name="call-sharp"
-        size={20}
-        color="black"
-        style={{ marginRight: 10 }}
-      />
-      <Text style={{ color: "black" }}>{bitem.name}</Text>
-    </View>
-
-    <View style={styles.textContainer}>
-      <Icon
-        name="calendar-sharp"
-        size={20}
-        color="black"
-        style={{ marginRight: 10 }}
-      />
-      <Text style={{ color: "black" }}>{bitem.schedule}</Text>
-    </View>
-
-    <View style={styles.servicesContainer}>
-      <Icon
-        name="medkit-sharp"
-        size={20}
-        color="black"
-        style={{ marginRight: 10 }}
-      />
-      <Text style={{ color: "black" }}>{bitem.services},</Text>
-    </View>
-
-    <View style={styles.Buttoncontainer}>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => {
-          Linking.openURL(`tel:${(bitem.phone)}`);
+        index={-1}
+        enablePanDownToClose={true}
+        ref={bottomSheetRef}
+        snapPoints={snapPoints}
+        onDismiss={() => {
+          setIsOpen(false);
+          setItem([]);
         }}
       >
-        <Text style={styles.button_text}>Llamar</Text>
-      </TouchableOpacity>
-    </View>
-  </BottomSheetView>
-</BottomSheet>
+        <BottomSheetView style={styles.bottomSheetContainer}>
+          <View style={styles.details_logo_container}>
+            <Image style={styles.details_logo} source={{ uri: bitem.data.logoURL }} />
+          </View>
 
+          <View style={[styles.textContainer, { marginTop: 20 }]}>
+            <Icon
+              name="call-sharp"
+              size={20}
+              color="black"
+              style={{ marginRight: 10 }}
+            />
+            <Text style={{ color: "black" }}>{bitem.data.contactName}</Text>
+          </View>
+
+          <View style={styles.textContainer}>
+            <Icon
+              name="calendar-sharp"
+              size={20}
+              color="black"
+              style={{ marginRight: 10 }}
+            />
+            <Text style={{ color: "black" }}>{bitem.data.schedule}</Text>
+          </View>
+
+          <View style={styles.servicesContainer}>
+            <Icon
+              name="medkit-sharp"
+              size={20}
+              color="black"
+              style={{ marginRight: 10 }}
+            />
+            <Text style={{ color: "black" }}>{bitem.data.services},</Text>
+          </View>
+
+          <View style={styles.Buttoncontainer}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                Linking.openURL(`tel:${bitem.phone}`);
+              }}
+            >
+              <Text style={styles.button_text}>Llamar</Text>
+            </TouchableOpacity>
+          </View>
+        </BottomSheetView>
+      </BottomSheet>
     </>
   );
 }
@@ -232,25 +275,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   bottomSheetContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     paddingTop: 30,
     paddingBottom: 50,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    height: '100%',
+    alignItems: "center",
+    justifyContent: "flex-start",
+    height: "100%",
   },
   textContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 10,
   },
   servicesContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginTop: 10,
   },
-  
 });

@@ -5,7 +5,6 @@ import { createStackNavigator } from '@react-navigation/stack'
 import Login from '../screens/Login'
 import SingUp from '../screens/SingUp'
 import MainNav from './MainNav'
-import AdminNavigation from '../adminComponents/navigation/adminNavigation';
 
 const Stack = createStackNavigator();
 
@@ -18,7 +17,7 @@ export default function LoginNav() {
           <Stack.Screen name={'login'} component={Login} />
           <Stack.Screen name={'sing-up'} component={SingUp}/>
           <Stack.Screen name='MainNav' component={MainNav}/>
-          <Stack.Screen name='AdminNav' component={AdminNavigation}/>
+
         </Stack.Navigator>
         </NavigationContainer>
       </>
