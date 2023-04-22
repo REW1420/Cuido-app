@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import COLORS from "../config/COLORS";
 import SPACING from "../config/SPACING";
-import React, { useState, useCallback, useRef , useEffect} from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Dimensions } from "react-native";
 import { SearchBar } from "@rneui/themed";
@@ -67,11 +67,13 @@ export default function Contacts() {
   const [searchQuery, setSearchQuery] = useState("");
   const bottomSheetRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
+
+
   const snapPoints = ["45%"];
 
   //use of contact data
-  const contactData = useContactData()
-  console.log(contactData)
+  const contactData = useContactData();
+  console.log(contactData);
 
   const handleSnapPress = useCallback((index) => {
     bottomSheetRef.current?.snapToIndex(index);
@@ -111,8 +113,9 @@ export default function Contacts() {
                 margin: 5,
               }}
               onPress={() => {
-                setItem(item), handleSnapPress(0);
-                console.log(item,'click item')
+                setItem(item.data);
+                handleSnapPress(0)
+               
               }}
             >
               <Avatar source={{ uri: item.data.logoURL }} />
@@ -127,27 +130,30 @@ export default function Contacts() {
 
       <BottomSheet
         index={-1}
+        
         enablePanDownToClose={true}
         ref={bottomSheetRef}
         snapPoints={snapPoints}
         onDismiss={() => {
-          setIsOpen(false);
           setItem([]);
         }}
       >
         <BottomSheetView style={styles.bottomSheetContainer}>
-          <View style={styles.details_logo_container}>
-            <Image style={styles.details_logo} source={{ uri: bitem.data.logoURL }} />
+        <View style={styles.details_logo_container}>
+            <Image
+              style={styles.details_logo}
+              source={{ uri: bitem.logoURL }}
+            />
           </View>
 
-          <View style={[styles.textContainer, { marginTop: 20 }]}>
+          <View style={[styles.textContainer, { marginTop: 20 }]}> 
             <Icon
               name="call-sharp"
               size={20}
               color="black"
               style={{ marginRight: 10 }}
             />
-            <Text style={{ color: "black" }}>{bitem.data.contactName}</Text>
+            <Text style={{ color: "black" }}>{bitem.contactName }</Text>
           </View>
 
           <View style={styles.textContainer}>
@@ -157,7 +163,7 @@ export default function Contacts() {
               color="black"
               style={{ marginRight: 10 }}
             />
-            <Text style={{ color: "black" }}>{bitem.data.schedule}</Text>
+            <Text style={{ color: "black" }}>{bitem.schedule}</Text>
           </View>
 
           <View style={styles.servicesContainer}>
@@ -167,14 +173,14 @@ export default function Contacts() {
               color="black"
               style={{ marginRight: 10 }}
             />
-            <Text style={{ color: "black" }}>{bitem.data.services},</Text>
+            <Text style={{ color: "black" }}>{bitem.services },</Text>
           </View>
 
           <View style={styles.Buttoncontainer}>
             <TouchableOpacity
               style={styles.button}
               onPress={() => {
-                Linking.openURL(`tel:${bitem.phone}`);
+                Linking.openURL(`tel:${bitem.phoneNumer}`);
               }}
             >
               <Text style={styles.button_text}>Llamar</Text>

@@ -1,32 +1,30 @@
 import {
   Text,
   View,
-  SafeAreaView,
   Image,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
   TextInput,
   StyleSheet,
-  Button,
+  Alert,
+  Platform,
 } from "react-native";
-
+import MapView, { Marker } from "react-native-maps";
 import COLORS from "../config/COLORS";
 import SPACING from "../config/SPACING";
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { SearchBar } from "@rneui/themed";
-import { ListItem } from "react-native-elements";
 import Icon from "react-native-vector-icons/Ionicons";
-import productData from "../assets/data/productsData";
 import Modal from "react-native-modal";
-import { propertyOf, remove } from "lodash";
+import { remove } from "lodash";
 import Toast from "react-native-toast-message";
-
 import { collection, onSnapshot } from "firebase/firestore";
-
-import { database, storage } from "../utils/firebase";
-
+import Order from "../MVC/Model";
+import { database } from "../utils/firebase";
+import * as Location from "expo-location";
+//intance the model to create an object
+const orderModel = new Order();
 //get documents from firestore
 function useProductData() {
   const [data, setData] = useState([]);
@@ -52,19 +50,63 @@ function useProductData() {
   return data;
 }
 
-export default function Store() {
+export default function Store({ navigation }) {
   const [number, setNumber] = useState(1);
   const [price, setPrice] = useState(price);
   const [bitem, setItem] = useState([]);
   const [carData, setCarData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [itemName, setItemName] = useState("");
+
+  //hooks for the confirm order modal
+  const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+
+  //steps
+  const [step, setStep] = useState(2);
+  //item count hook
+  const [count, setCount] = useState(0);
+  const [initialPrice, setInitialPrice] = useState(0);
+  //handle step increment
+
+  const stepIncrement = () => {
+    if (step == 4) {
+      return;
+    } else {
+      setStep(step + 1);
+    }
+    console.log(step);
+  };
+
+  const stepDecrease = () => {
+    if (step == 1) {
+      return;
+    } else {
+      setStep(step - 1);
+    }
+    console.log(step);
+  };
+
+  //hook for the total price
+  const [priceToPay, setPriceToPay] = useState(0.0);
+
   const bottomSheetRef = useRef(null);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [lastID, setLastID] = useState(1);
 
+  //hooks for location and current location
+  const [currentLocation, setCurrentLocation] = useState([]);
+  const [latitudeDelta, setLatitudeDelta] = useState(null);
+  const [longitudeDelta, setLongitudeDelta] = useState(null);
+  const [locationPermission, setLocationPermission] = useState(false);
+
+  //hooks for the details botomsheed
+  const [details, setDetails] = useState("");
+  const [quantity, setQuantity] = useState(0);
   const snapPoints = ["40%"];
+
+  //hooks for the form to send the data to db
+  const [comment, setComment] = useState("");
 
   const handleSnapPress = useCallback((index) => {
     bottomSheetRef.current?.snapToIndex(index);
@@ -74,18 +116,29 @@ export default function Store() {
   const productData2 = useProductData();
 
   const addDataToCart = () => {
+    //update the item count
+    setCount(count + 1);
+
     //update the ID
     setLastID(lastID + 1);
     //JSON data for the shooping cart
     const newProduc = {
       id: lastID,
-      totalPrice: price,
+      totalPrice: price * number,
       quantity: number,
       name: itemName,
     };
 
     //add the data to the shopping cart JSON
     setCarData([...carData, newProduc]);
+
+    //calculate the total price
+
+    const total = carData.reduce(
+      (acumulador, producto) => acumulador + producto.totalPrice,
+      initialPrice
+    );
+    setPriceToPay(total);
   };
 
   const [isModalVisible, setModalVisible] = useState(false);
@@ -99,9 +152,15 @@ export default function Store() {
     setIsModalNegativeVisible(!isModalNegativeVisible);
   };
 
+  //toggle for confirm order
+  const toggleModalConfirm = () => {
+    setIsModalConfirmVisible(!isModalConfirmVisible);
+    setStep(1);
+  };
   const handleDelete = (id) => {
     const newCarData = remove(carData, (carItem) => carItem.id !== id);
     setCarData(newCarData);
+    setCount(count - 1);
   };
 
   useEffect(() => {
@@ -117,6 +176,66 @@ export default function Store() {
     });
   };
 
+  //contruction of the json
+  const newOrderData = {
+    user_id: "1",
+    order_id: "5",
+    total_price: priceToPay,
+    products: carData,
+    comments: comment,
+    delivered: true,
+    paid: true,
+    is_delivered_by: "1",
+  };
+
+  //handle text form
+  const handleText = (value, setState) => {
+    setState(value);
+  };
+
+  const handleAddOrder = async () => {
+    await orderModel.createOrder(newOrderData);
+    toggleModalConfirm();
+  };
+
+  //async funtion to get the permission to acces location
+
+  useEffect(() => {
+    async function getLocation() {
+      //ask for permisson
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        return;
+      } else {
+        const { coords } = await Location.getCurrentPositionAsync();
+        setCurrentLocation(coords);
+        console.log(currentLocation);
+      }
+    }
+    getLocation();
+  }, []);
+
+  const showCurrentRegion = {
+    latitude: currentLocation.latitude,
+    longitude: currentLocation.longitude,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  };
+
+  const postAlert = () =>
+    Alert.alert(
+      "¿Esta seguro de enviar la orden?",
+      "No se podra editar despues",
+      [
+        {
+          text: "Cancelar",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        { text: "Confirmar", onPress: () => handleAddOrder() },
+      ]
+    );
   return (
     <>
       <ScrollView style={{ backgroundColor: COLORS.primary_backgroud }}>
@@ -148,11 +267,20 @@ export default function Store() {
                 }
               }}
             >
-              <Icon
-                name="cart-outline"
-                size={35}
-                color={COLORS.primary_button}
-              />
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: 20 }}>{count ? count : ""}</Text>
+                <Icon
+                  name="cart-outline"
+                  size={35}
+                  color={COLORS.primary_button}
+                />
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -188,11 +316,14 @@ export default function Store() {
                     <TouchableOpacity
                       style={styles.buttom}
                       onPress={() => {
-                        setItem(item),
+                        setItem(item.data),
                           handleSnapPress(0),
-                          setPrice(item.unit_price);
-                        setItemName(item.name);
-                        setTotalPrice(item.unit_price);
+                          setPrice(item.data.price);
+                        setItemName(item.data.productName);
+                        setTotalPrice(item.data.price);
+                        setInitialPrice(item.data.price);
+                        setDetails(item.data.description);
+                        setQuantity(item.data.quantity);
                       }}
                     >
                       <Text style={styles.textButtom}>Detalles</Text>
@@ -227,7 +358,7 @@ export default function Store() {
               style={{ marginRight: 10 }}
             />
             <Text style={{ color: "black", margin: 10, marginBottom: 20 }}>
-              {bitem.details}
+              {details}
             </Text>
           </View>
 
@@ -277,7 +408,11 @@ export default function Store() {
               <View style={styles.container}>
                 <TouchableOpacity
                   onPress={() => {
-                    setNumber(number + 1);
+                    if (number > quantity - 1) {
+                      return;
+                    } else {
+                      setNumber(number + 1);
+                    }
                   }}
                   style={styles.buttom}
                 >
@@ -315,6 +450,7 @@ export default function Store() {
               justifyContent: "center",
             }}
           >
+            <Text style={{ fontSize: 25, fontWeight: "bold" }}>Carrito</Text>
             {carData.map((carItem, i) => (
               <View style={styles.carItems}>
                 <View
@@ -335,7 +471,7 @@ export default function Store() {
                   <TouchableOpacity
                     style={{
                       backgroundColor: "red",
-                      width: 70,
+                      width: 50,
                       height: 30,
                       justifyContent: "center",
                       alignItems: "center",
@@ -343,7 +479,7 @@ export default function Store() {
                     }}
                     onPress={() => handleDelete(carItem.id)}
                   >
-                    <Text style={{ color: "white" }}>Eliminar</Text>
+                    <Icon name="trash-bin-outline" color={"white"} size={20} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -353,6 +489,18 @@ export default function Store() {
               <View style={styles.container}>
                 <TouchableOpacity style={styles.buttom} onPress={toggleModal}>
                   <Text style={styles.textButtom}>Regresar</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.container}>
+                <TouchableOpacity
+                  style={styles.buttom}
+                  onPress={() => {
+                    toggleModalConfirm();
+                    toggleModal();
+                    console.log(carData);
+                  }}
+                >
+                  <Text style={styles.textButtom}>Comprar: ${priceToPay}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -407,6 +555,147 @@ export default function Store() {
                 onPress={toggleModalError}
               >
                 <Text style={styles.textButtom}>Ir a la tienda</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        isVisible={isModalConfirmVisible}
+        onBackButtonPress={toggleModalConfirm}
+        onBackdropPress={toggleModalConfirm}
+      >
+        <View
+          style={{
+            backgroundColor: "white",
+            borderRadius: 10,
+            padding: 20,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ fontSize: 25, fontWeight: "bold" }}>
+            {step == 1
+              ? "Confirmar Orden"
+              : step == 2
+              ? "Escoger ubicacion"
+              : step == 3
+              ? "Extra"
+              : step == 4
+              ? "Recivo"
+              : null}
+          </Text>
+
+          {step === 1 &&
+            carData.map((carItem, i) => (
+              <View style={styles.carItems}>
+                <View
+                  style={{
+                    flex: 1,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    marginHorizontal: 10,
+                  }}
+                >
+                  <Text style={{ fontWeight: "bold", margin: 5 }}>
+                    {carItem.name}
+                  </Text>
+                  <Text style={{ margin: 5 }}>${carItem.totalPrice}</Text>
+                  <Text style={{ margin: 5 }}>
+                    Cantidad: {carItem.quantity}
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+          {step === 2 && (
+            <View style={{ height: 500, width: "100%" }}>
+              <View style={{ flex: 1, margin: 10 }}>
+                <MapView
+                  showsUserLocation={true}
+                  showsMyLocationButton={true}
+                  style={{ flex: 1 }}
+                  initialRegion={showCurrentRegion}
+                  onPress={(coordinate) => {
+                    setCurrentLocation(coordinate.nativeEvent.coordinate);
+                    console.log("By click", currentLocation);
+                  }}
+                >
+                  <Marker
+                    coordinate={showCurrentRegion}
+                    draggable
+                    onDragEnd={(coordinate) => {
+                      setCurrentLocation(coordinate.nativeEvent.coordinate);
+                      console.log("new coordinate", currentLocation);
+                    }}
+                    pinColor="#F4E0BB"
+                  />
+                </MapView>
+              </View>
+            </View>
+          )}
+          {step === 3 && (
+            <TextInput
+              style={styles.inputTxt}
+              placeholder="Agregar un comentario"
+              multiline={true}
+              numberOfLines={3}
+              onChangeText={(value) => handleText(value, setComment)}
+              value={comment}
+            />
+          )}
+
+          {step === 4 && (
+            <>
+              <Text>Total a pagar: ${priceToPay}</Text>
+              {carData.map((carItem, i) => (
+                <View style={styles.carItems} key={i}>
+                  <View
+                    style={{
+                      flex: 1,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginHorizontal: 10,
+                    }}
+                  >
+                    <Text style={{ fontWeight: "bold", margin: 5 }}>
+                      {carItem.name}
+                    </Text>
+                    <Text style={{ margin: 5 }}>${carItem.totalPrice}</Text>
+                    <Text style={{ margin: 5 }}>
+                      Cantidad: {carItem.quantity}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </>
+          )}
+
+          <View style={{ flexDirection: "row" }}>
+            <View style={{ marginHorizontal: 10 }}>
+              <TouchableOpacity
+                style={styles.buttom}
+                onPress={() => {
+                  step == 1 ? toggleModalConfirm() : stepDecrease();
+                }}
+              >
+                <Text style={styles.textButtom}>
+                  {step == 1 ? "Cancelar" : "Atras"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ marginHorizontal: 10 }}>
+              <TouchableOpacity
+                style={styles.buttom}
+                onPress={() => {
+                  step === 4 ? postAlert() : stepIncrement();
+                }}
+              >
+                <Text style={styles.textButtom}>
+                  {step == 4 ? "Confirmar" : "Siguiente"}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -534,5 +823,17 @@ const styles = StyleSheet.create({
     elevation: 4,
     height: 60,
     width: 300,
+  },
+  inputTxt: {
+    backgroundColor: COLORS.input_color,
+    padding: 15,
+    margin: 15,
+    borderRadius: 50,
+    borderWidth: 1.5,
+    width: "80%",
+    color: COLORS.input_text,
+    textAlign: "center",
+    borderColor: COLORS.input_color,
+    alignSelf: "center",
   },
 });
