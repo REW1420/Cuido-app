@@ -82,7 +82,7 @@ export default function Store({ navigation }) {
     }
   }, [user_id]);
   //google API key
-  const API_KEY = "AIzaSyCU0Y0u6wlVZP_Wa0hcfyJi9ag7PDFLpIo";
+ 
 
   const destination = { latitude: 37.4226711, longitude: -122.0849872 };
   //hooks for the confirm order modal
