@@ -9,40 +9,66 @@ import {
   TextInput,
   StyleSheet,
   Button,
+  Pressable,
 } from "react-native";
 import COLORS from "../config/COLORS";
 import SPACING from "../config/SPACING";
 import Toast from "react-native-toast-message";
 import React, { useState } from "react";
 import { Dimensions } from "react-native";
-
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../utils/firebase";
+import { useTogglePasswordVisibility } from "../utils/useTogglePasswordVisibility";
 import Icon from "react-native-vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect } from "react";
+import global from '../utils/global'
 
 const { width, height } = Dimensions.get("screen");
 
+const userID = AsyncStorage.getItem("user_id");
 export default function Login({ navigation }) {
+  useEffect(() => {
+    if (userID !== null && userID !== "") {
+      navigation.navigate("MainNav");
+    }
+  }, [userID]);
+
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
+  const [userID, setUserID] = useState("");
+  const { passwordVisibility, rightIcon, handlePasswordVisibility } =
+    useTogglePasswordVisibility();
 
   const showToastError = () => {
     Toast.show({
       type: "error",
       text1: "Error",
-      text2:'Los campos no pueden estar vacios',
+      text2: "Los campos no pueden estar vacios",
       visibilityTime: 3000,
       position: "top",
     });
   };
 
-  const showToastInvalidCredentiasls =()=>{
-    Toast.show({
-      type: "error",
-      text1: "Error",
-      text2:'Credenciales incorrectas',
-      visibilityTime: 3000,
-      position: "top",
-    });
-  }
+  const handleSingIn = async () => {
+    if (user === "" && password === "") {
+      showToastError();
+    } else {
+      await signInWithEmailAndPassword(auth, user, password)
+        .then((userCredential) => {
+          console.log(userCredential.user.uid);
+
+          setUserID(userCredential.user.uid);
+          global.user_id = userCredential.user.uid;
+
+          navigation.navigate("MainNav");
+        })
+        .catch((error) => {
+          console.log(error.code);
+          console.log(error.message);
+        });
+    }
+  };
 
   return (
     <>
@@ -77,7 +103,9 @@ export default function Login({ navigation }) {
                 style={styles.inputTxt}
                 placeholder="ejemplo@dominio.com"
                 placeholderTextColor={COLORS.input_text}
-                onChangeText={(text) => {setUser(text)}}
+                onChangeText={(text) => {
+                  setUser(text);
+                }}
               />
             </View>
           </View>
@@ -92,29 +120,22 @@ export default function Login({ navigation }) {
               <TextInput
                 style={styles.inputTxt}
                 placeholder="****"
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={passwordVisibility}
                 placeholderTextColor={COLORS.input_text}
-                onChangeText={(text) => {setPassword(text)}}
+                onChangeText={(text) => {
+                  setPassword(text);
+                }}
               />
+              <Pressable onPress={handlePasswordVisibility}>
+                <Icon name={rightIcon} size={22} color="#232323" />
+              </Pressable>
             </View>
           </View>
 
           <View style={styles.container}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => {
-                if(user !== '' && password !== ''){
-
-                  if( user == 'admin' && password=='admin') {
-                    navigation.navigate('AdminNav')
-                  } else {
-                      showToastInvalidCredentiasls()
-                  }
-                  navigation.navigate("MainNav");
-                } else {
-                      showToastError()
-                }
-              }}
-            >
+            <TouchableOpacity style={styles.button} onPress={handleSingIn}>
               <Text style={styles.button_text}>Iniciar sesión</Text>
             </TouchableOpacity>
           </View>
@@ -130,7 +151,7 @@ export default function Login({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
-        <Toast ref={(ref) => Toast.setRef(ref)} />
+        <Toast ref={Toast.setRef} />
       </ScrollView>
     </>
   );

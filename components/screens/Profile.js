@@ -1,14 +1,9 @@
 import {
-  Text,
   View,
-  SafeAreaView,
   Image,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
-  TextInput,
   StyleSheet,
-  Button,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -16,37 +11,54 @@ import { ListItem } from "react-native-elements";
 import COLORS from "../config/COLORS";
 import SPACING from "../config/SPACING";
 import Order from "../MVC/Model";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { auth } from "../utils/firebase";
+import { signOut } from "firebase/auth";
 
 //intance the model to create an object
 const orderModel = new Order();
 
 function useOrderData() {
+  const [user_id, serUser_id] = useState("");
+
+  AsyncStorage.getItem("user_id").then((asynD) => {
+    serUser_id(asynD);
+  });
+  console.log(user_id);
+
   const [data, setData] = useState([]);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const ordersResponse = await orderModel.getOrdersFiltered(1);
+        const ordersResponse = await orderModel.getOrdersFiltered(
+          user_id.toString()
+        );
         setData(ordersResponse);
       } catch (error) {
         console.error(error);
       }
     };
 
-    if (1) {
-      fetchOrders();
-    }
-  }, []);
+    fetchOrders();
+  }, [user_id]);
 
   return data;
 }
 
-export default function Profile() {
+export default function Profile({ navigation }) {
   //hooks for get fetch
   const ordersByID = useOrderData();
   console.log(ordersByID);
   //handle event for fetch the orders data
-
+  const handleSingOut = () => {
+    signOut(auth)
+      .then(() => {
+        console.log("sing out");
+        navigation.navigate("login");
+      })
+      .catch((e) => console.log(e));
+  };
   return (
     <>
       <ScrollView style={{ backgroundColor: COLORS.primary_backgroud }}>
@@ -70,25 +82,14 @@ export default function Profile() {
                 justifyContent: "center",
                 alignItems: "center",
               }}
+              onPress={handleSingOut}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Icon name="log-out-outline" size={35} color={"red"} />
-              </View>
+              <Icon name="log-out-outline" size={35} color={"red"} />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.primary_backgroud}>
-       
-        </View>
-
-        
+        <View style={styles.primary_backgroud}></View>
 
         {ordersByID.map((item, i) => (
           <ListItem

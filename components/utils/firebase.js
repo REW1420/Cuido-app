@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
-import {getFirestore} from 'firebase/firestore';
-import {getStorage} from 'firebase/storage'
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDLBHWveyiXv0hcHF-2vSwnBCt_xtPbugM",
@@ -9,11 +10,12 @@ const firebaseConfig = {
   storageBucket: "cuido-dabase.appspot.com",
   messagingSenderId: "986004045604",
   appId: "1:986004045604:web:4a3b55b5aee334baa0fdb1",
-  measurementId: "G-PL3JVWK60H"
+  measurementId: "G-PL3JVWK60H",
 };
 
 // Initialize Firebase
- initializeApp(firebaseConfig);
+initializeApp(firebaseConfig);
 
- export const database = getFirestore();
- export const storage = getStorage()
+export const database = getFirestore();
+export const storage = getStorage();
+export const auth = getAuth();

@@ -7,9 +7,10 @@ import {
   TextInput,
   StyleSheet,
   Alert,
-  Platform,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import MapViewDirections from "react-native-maps-directions";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import COLORS from "../config/COLORS";
 import SPACING from "../config/SPACING";
 import React, { useState, useCallback, useRef, useEffect } from "react";
@@ -21,10 +22,14 @@ import { remove } from "lodash";
 import Toast from "react-native-toast-message";
 import { collection, onSnapshot } from "firebase/firestore";
 import Order from "../MVC/Model";
+import UserModel from "../MVC/UserModel";
 import { database } from "../utils/firebase";
 import * as Location from "expo-location";
+import global from "../utils/global";
+
 //intance the model to create an object
 const orderModel = new Order();
+const userModel = new UserModel();
 //get documents from firestore
 function useProductData() {
   const [data, setData] = useState([]);
@@ -57,19 +62,52 @@ export default function Store({ navigation }) {
   const [carData, setCarData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [itemName, setItemName] = useState("");
+  const [data, setData] = useState([]);
 
+  useEffect(() => {
+    if (global.user_id !== null || global.user_id !== "") {
+      try {
+        fetch(
+          `https://cuido-middleware.000webhostapp.com/api/users/code/${global.user_id}`
+        )
+          .then((response) => response.json())
+          .then((json) => {
+            setData(json);
+          });
+      } catch (e) {
+        console.log(e);
+      }
+    } else {
+      return;
+    }
+  }, [user_id]);
+  //google API key
+  const API_KEY = "AIzaSyCU0Y0u6wlVZP_Wa0hcfyJi9ag7PDFLpIo";
+
+  const destination = { latitude: 37.4226711, longitude: -122.0849872 };
   //hooks for the confirm order modal
   const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
 
-  //steps
+  console.log("variable global", global.user_id);
+  //data get from login
+  const [user_id, serUser_id] = useState("");
+  const [user_phone_number, setUser_phone_number] = useState(0);
+
+  data.forEach((item, i) => {
+    if (item && item.phone_number) {
+      console.log("log", item.phone_number);
+      global.phone_number = item.phone_number;
+    }
+  });
+
   const [step, setStep] = useState(2);
   //item count hook
   const [count, setCount] = useState(0);
   const [initialPrice, setInitialPrice] = useState(0);
   //handle step increment
-
+  //console.log("user phone number", user_phone_number);
   const stepIncrement = () => {
-    if (step == 4) {
+    if (step == 5) {
       return;
     } else {
       setStep(step + 1);
@@ -96,9 +134,6 @@ export default function Store({ navigation }) {
 
   //hooks for location and current location
   const [currentLocation, setCurrentLocation] = useState([]);
-  const [latitudeDelta, setLatitudeDelta] = useState(null);
-  const [longitudeDelta, setLongitudeDelta] = useState(null);
-  const [locationPermission, setLocationPermission] = useState(false);
 
   //hooks for the details botomsheed
   const [details, setDetails] = useState("");
@@ -107,7 +142,7 @@ export default function Store({ navigation }) {
 
   //hooks for the form to send the data to db
   const [comment, setComment] = useState("");
-
+  const [tempPhoneNumber, setTempPhoneNumber] = useState("");
   const handleSnapPress = useCallback((index) => {
     bottomSheetRef.current?.snapToIndex(index);
   }, []);
@@ -175,17 +210,25 @@ export default function Store({ navigation }) {
       position: "top",
     });
   };
+  const showCurrentRegion = {
+    latitude: currentLocation.latitude,
+    longitude: currentLocation.longitude,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  };
 
   //contruction of the json
   const newOrderData = {
-    user_id: "1",
-    order_id: "5",
-    total_price: priceToPay,
+    user_id: global.user_id,
     products: carData,
+    total_price: priceToPay,
     comments: comment,
-    delivered: true,
-    paid: true,
-    is_delivered_by: "1",
+    delivered: false,
+    paid: false,
+    is_delivered_by: 1,
+    user_phone_number: parseInt(tempPhoneNumber),
+    location_lat: parseFloat(currentLocation.latitude),
+    location_long: parseFloat(currentLocation.longitude),
   };
 
   //handle text form
@@ -215,13 +258,6 @@ export default function Store({ navigation }) {
     }
     getLocation();
   }, []);
-
-  const showCurrentRegion = {
-    latitude: currentLocation.latitude,
-    longitude: currentLocation.longitude,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  };
 
   const postAlert = () =>
     Alert.alert(
@@ -581,8 +617,10 @@ export default function Store({ navigation }) {
               : step == 2
               ? "Escoger ubicacion"
               : step == 3
-              ? "Extra"
+              ? "Agregar un comentario"
               : step == 4
+              ? "Agregar numero de telefono"
+              : step == 5
               ? "Recivo"
               : null}
           </Text>
@@ -638,15 +676,25 @@ export default function Store({ navigation }) {
           {step === 3 && (
             <TextInput
               style={styles.inputTxt}
-              placeholder="Agregar un comentario"
+              placeholder="Comentario"
               multiline={true}
               numberOfLines={3}
               onChangeText={(value) => handleText(value, setComment)}
               value={comment}
             />
           )}
-
           {step === 4 && (
+            <TextInput
+              style={styles.inputTxt}
+              placeholder="numero de telefono"
+              multiline={true}
+              numberOfLines={3}
+              onChangeText={(value) => handleText(value, setTempPhoneNumber)}
+              value={tempPhoneNumber}
+            />
+          )}
+
+          {step === 5 && (
             <>
               <Text>Total a pagar: ${priceToPay}</Text>
               {carData.map((carItem, i) => (
@@ -690,11 +738,11 @@ export default function Store({ navigation }) {
               <TouchableOpacity
                 style={styles.buttom}
                 onPress={() => {
-                  step === 4 ? postAlert() : stepIncrement();
+                  step === 5 ? postAlert() : stepIncrement();
                 }}
               >
                 <Text style={styles.textButtom}>
-                  {step == 4 ? "Confirmar" : "Siguiente"}
+                  {step == 5 ? "Confirmar" : "Siguiente"}
                 </Text>
               </TouchableOpacity>
             </View>
