@@ -4,8 +4,10 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
+  SafeAreaView,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import Icon from "react-native-vector-icons/Ionicons";
 import { ListItem } from "react-native-elements";
 import COLORS from "../config/COLORS";
@@ -14,34 +16,20 @@ import Order from "../MVC/Model";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../utils/firebase";
 import { signOut } from "firebase/auth";
-
+import global from "../utils/global";
 //intance the model to create an object
 const orderModel = new Order();
 
 function useOrderData() {
-  const [user_id, serUser_id] = useState("");
-
-  AsyncStorage.getItem("user_id").then((asynD) => {
-    serUser_id(asynD);
-  });
-  console.log(user_id);
-
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const ordersResponse = await orderModel.getOrdersFiltered(
-          user_id.toString()
-        );
-        setData(ordersResponse);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
+    async function fetchOrders() {
+      const ordersResponse = await orderModel.getOrdersFiltered(global.user_id);
+      setData((existingData) => [...existingData, ...ordersResponse]);
+    }
     fetchOrders();
-  }, [user_id]);
+  }, [global.user_id]);
 
   return data;
 }
@@ -49,7 +37,7 @@ function useOrderData() {
 export default function Profile({ navigation }) {
   //hooks for get fetch
   const ordersByID = useOrderData();
-  console.log(ordersByID);
+
   //handle event for fetch the orders data
   const handleSingOut = () => {
     signOut(auth)
@@ -59,9 +47,23 @@ export default function Profile({ navigation }) {
       })
       .catch((e) => console.log(e));
   };
+
+  //hoosk for refershing the view
+  const [refershing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
   return (
     <>
-      <ScrollView style={{ backgroundColor: COLORS.primary_backgroud }}>
+      <ScrollView
+        style={{ backgroundColor: COLORS.primary_backgroud }}
+        refreshControl={
+          <RefreshControl refreshing={refershing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.secondary_backgroud}>
           <View style={styles.containerTopLeft}>
             <Image

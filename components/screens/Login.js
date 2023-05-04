@@ -22,8 +22,9 @@ import { useTogglePasswordVisibility } from "../utils/useTogglePasswordVisibilit
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
-import global from '../utils/global'
-
+import global from "../utils/global";
+import UserModel from "../MVC/UserModel";
+const userModel = new UserModel();
 const { width, height } = Dimensions.get("screen");
 
 const userID = AsyncStorage.getItem("user_id");
@@ -67,6 +68,46 @@ export default function Login({ navigation }) {
           console.log(error.code);
           console.log(error.message);
         });
+    }
+  };
+  const showLoginError = (message) => {
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: message,
+      visibilityTime: 2000,
+      position: "top",
+    });
+  };
+
+  const handleGetUserRole = async () => {
+    if (user === "" && password === "") {
+      showToastError();
+    } else {
+      userModel.getUserRoleByEmail(user).then((data) => {
+        const role = data.role;
+        switch (role) {
+          case "client":
+            console.log("is client");
+            signInWithEmailAndPassword(auth, user, password)
+              .then((userCredential) => {
+                global.user_id = userCredential.user.uid;
+                console.log("user id", global.user_id);
+                navigation.navigate("MainNav");
+              })
+              .catch((e) => {
+                console.log(e.code);
+                console.log(e.message);
+                if (e.code === "auth/wrong-password") {
+                  showLoginError("Contraseña incorrecta");
+                }
+              });
+            break;
+          default:
+            console.log(" is worker");
+            showLoginError("Este usuario no puede usar ese correo");
+        }
+      });
     }
   };
 
@@ -135,7 +176,7 @@ export default function Login({ navigation }) {
           </View>
 
           <View style={styles.container}>
-            <TouchableOpacity style={styles.button} onPress={handleSingIn}>
+            <TouchableOpacity style={styles.button} onPress={handleGetUserRole}>
               <Text style={styles.button_text}>Iniciar sesión</Text>
             </TouchableOpacity>
           </View>

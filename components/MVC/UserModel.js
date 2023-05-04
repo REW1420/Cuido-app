@@ -25,4 +25,21 @@ export default class UserModel {
     console.log(userData);
     return userData;
   }
+
+  async getUserDeliverer() {
+    const response = await fetch(
+      "https://cuido-middleware.000webhostapp.com/api/users/role/deliverer"
+    );
+    const deliverer = await response.json();
+    console.log("Model", deliverer);
+    return deliverer;
+  }
+  async getUserRoleByEmail(email) {
+    const response = await fetch(
+      `https://cuido-middleware.000webhostapp.com/api/users/user-role/${email}`
+    );
+    const role = await response.json();
+    console.log(role);
+    return role;
+  }
 }

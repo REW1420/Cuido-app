@@ -70,8 +70,6 @@ export default function SingUp({ navigation }) {
 
         userModel.createUser(userData);
 
-      
-
         navigation.navigate("login");
       })
       .catch((error) => {

@@ -7,6 +7,8 @@ import {
   TextInput,
   StyleSheet,
   Alert,
+  RefreshControl,
+  SafeAreaView
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
@@ -20,12 +22,19 @@ import Icon from "react-native-vector-icons/Ionicons";
 import Modal from "react-native-modal";
 import { remove } from "lodash";
 import Toast from "react-native-toast-message";
-import { collection, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  getDoc,
+} from "firebase/firestore";
 import Order from "../MVC/Model";
 import UserModel from "../MVC/UserModel";
 import { database } from "../utils/firebase";
 import * as Location from "expo-location";
 import global from "../utils/global";
+import { RadioButton } from "react-native-paper";
 
 //intance the model to create an object
 const orderModel = new Order();
@@ -62,7 +71,11 @@ export default function Store({ navigation }) {
   const [carData, setCarData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [itemName, setItemName] = useState("");
+  const [firebaseID, setFirebaseID] = useState("");
   const [data, setData] = useState([]);
+
+  //radio button checked hook
+  const [checked, setChecked] = useState("");
 
   useEffect(() => {
     if (global.user_id !== null || global.user_id !== "") {
@@ -73,6 +86,7 @@ export default function Store({ navigation }) {
           .then((response) => response.json())
           .then((json) => {
             setData(json);
+            console.log("user data", data);
           });
       } catch (e) {
         console.log(e);
@@ -95,11 +109,11 @@ export default function Store({ navigation }) {
 
   data.forEach((item, i) => {
     if (item && item.phone_number) {
-      console.log("log", item.phone_number);
       global.phone_number = item.phone_number;
+      global.client_name = item.first_name;
     }
   });
-
+  console.log("global", global.phone_number);
   const [step, setStep] = useState(2);
   //item count hook
   const [count, setCount] = useState(0);
@@ -107,7 +121,7 @@ export default function Store({ navigation }) {
   //handle step increment
   //console.log("user phone number", user_phone_number);
   const stepIncrement = () => {
-    if (step == 5) {
+    if (step == 6) {
       return;
     } else {
       setStep(step + 1);
@@ -131,6 +145,7 @@ export default function Store({ navigation }) {
   const [totalPrice, setTotalPrice] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [lastID, setLastID] = useState(1);
+  const [deliverer, setDeliverer] = useState([]);
 
   //hooks for location and current location
   const [currentLocation, setCurrentLocation] = useState([]);
@@ -147,9 +162,6 @@ export default function Store({ navigation }) {
     bottomSheetRef.current?.snapToIndex(index);
   }, []);
 
-  //use the data
-  const productData2 = useProductData();
-
   const addDataToCart = () => {
     //update the item count
     setCount(count + 1);
@@ -162,6 +174,7 @@ export default function Store({ navigation }) {
       totalPrice: price * number,
       quantity: number,
       name: itemName,
+      firebaseID: firebaseID,
     };
 
     //add the data to the shopping cart JSON
@@ -199,6 +212,7 @@ export default function Store({ navigation }) {
   };
 
   useEffect(() => {
+    handleGetDeliverer();
     setTotalPrice(price * number);
   }, [number, price]);
 
@@ -225,10 +239,12 @@ export default function Store({ navigation }) {
     comments: comment,
     delivered: false,
     paid: false,
-    is_delivered_by: 1,
+    is_delivered_by: checked,
     user_phone_number: parseInt(tempPhoneNumber),
     location_lat: parseFloat(currentLocation.latitude),
     location_long: parseFloat(currentLocation.longitude),
+    client_name: global.client_name,
+    is_being_delivering: false,
   };
 
   //handle text form
@@ -238,9 +254,21 @@ export default function Store({ navigation }) {
 
   const handleAddOrder = async () => {
     await orderModel.createOrder(newOrderData);
+    await updateQuantity();
+    handleClrearOrderData();
     toggleModalConfirm();
   };
 
+  //delete all data that were use when creating a new order
+  const handleClrearOrderData = () => {
+    setCarData([]);
+    setCurrentLocation([]);
+    setComment("");
+    setTempPhoneNumber(0);
+    setUser_phone_number(0);
+    setChecked("");
+    setCount(0);
+  };
   //async funtion to get the permission to acces location
 
   useEffect(() => {
@@ -272,9 +300,78 @@ export default function Store({ navigation }) {
         { text: "Confirmar", onPress: () => handleAddOrder() },
       ]
     );
+
+  const handleGetDeliverer = async () => {
+    const delivererData = await userModel.getUserDeliverer();
+    setDeliverer(delivererData);
+    console.log("view", deliverer);
+  };
+
+  const updateQuantity = async () => {
+    carData.forEach(async (item, i) => {
+      const docRef = doc(database, "products", firebaseID);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const actualQuantity = await docSnap.data().quantity;
+        const newQuantity = parseInt(actualQuantity) - parseInt(item.quantity);
+
+        await updateDoc(doc(database, "products", firebaseID), {
+          quantity: newQuantity,
+        })
+          .then(() => console.log("quantity update"))
+          .catch((e) => console.log(e));
+      }
+    });
+  };
+  //use the data
+  const productData2 = useProductData();
+  const [productData, setProductData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(database, "products"),
+      (querySnapshot) => {
+        const products = [];
+        querySnapshot.forEach((doc) => {
+          products.push({
+            id: doc.id,
+            data: doc.data(),
+          });
+        });
+        setProductData(products);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    const filtered = productData.filter((item) => {
+      const itemData = item.data.productName.toLowerCase();
+      const textData = text.toLowerCase();
+      return itemData.indexOf(textData) > -1;
+    });
+    setFilteredData(filtered);
+  };
+
+  //hoosk for refershing the view
+  const [refershing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
+
   return (
     <>
-      <ScrollView style={{ backgroundColor: COLORS.primary_backgroud }}>
+      <ScrollView
+        style={{ backgroundColor: COLORS.primary_backgroud }}
+        refreshControl={
+          <RefreshControl refreshing={refershing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.secondary_backgroud}>
           <View style={styles.containerTopLeft}>
             <Image
@@ -328,48 +425,103 @@ export default function Store({ navigation }) {
               containerStyle={styles.searchContainer}
               inputContainerStyle={styles.inputContainer}
               inputStyle={styles.input}
-              onChangeText={(text) => setSearchQuery(text)}
+              onChangeText={handleSearch}
               value={searchQuery}
-              onCancel={() => setSearchQuery("")}
             />
           </View>
         </View>
-
-        <View>
-          {productData2.map((item, i) => (
-            <View key={i} style={styles.productsContainer}>
-              <View>
-                <Image
-                  style={styles.image}
-                  source={{ uri: item.data.logoURL }}
-                />
-                <View style={styles.contentProducts}>
-                  <View style={styles.text}>
-                    <Text style={styles.name}>{item.data.productName}</Text>
-                    <Text style={styles.price}>${item.data.price}</Text>
-                  </View>
-                  <View>
-                    <TouchableOpacity
-                      style={styles.buttom}
-                      onPress={() => {
-                        setItem(item.data),
-                          handleSnapPress(0),
-                          setPrice(item.data.price);
-                        setItemName(item.data.productName);
-                        setTotalPrice(item.data.price);
-                        setInitialPrice(item.data.price);
-                        setDetails(item.data.description);
-                        setQuantity(item.data.quantity);
-                      }}
-                    >
-                      <Text style={styles.textButtom}>Detalles</Text>
-                    </TouchableOpacity>
+        {filteredData.length > 0
+          ? filteredData.map((item, i) => (
+              <View key={i} style={styles.productsContainer}>
+                <View>
+                  <Image
+                    style={styles.image}
+                    source={{ uri: item.data.logoURL }}
+                  />
+                  <View style={styles.contentProducts}>
+                    <View style={styles.text}>
+                      <Text style={styles.name}>{item.data.productName}</Text>
+                      <Text style={styles.price}>${item.data.price}</Text>
+                    </View>
+                    <View>
+                      <TouchableOpacity
+                        style={
+                          item.data.quantity === "0"
+                            ? styles.buttomSoldOut
+                            : styles.buttom
+                        }
+                        onPress={
+                          item.data.quantity === "0"
+                            ? () => {
+                                console.log("no hay");
+                              }
+                            : () => {
+                                setFirebaseID(item.id),
+                                  handleSnapPress(0),
+                                  setPrice(item.data.price);
+                                setItemName(item.data.productName);
+                                setTotalPrice(item.data.price);
+                                setInitialPrice(item.data.price);
+                                setDetails(item.data.description);
+                                setQuantity(item.data.quantity);
+                              }
+                        }
+                      >
+                        <Text style={styles.textButtom}>
+                          {item.data.quantity === "0" ? "Agotado" : "Detalles"}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               </View>
-            </View>
-          ))}
-        </View>
+            ))
+          : productData.map((item, i) => (
+              <View key={i} style={styles.productsContainer}>
+                <View>
+                  <Image
+                    style={styles.image}
+                    source={{ uri: item.data.logoURL }}
+                  />
+                  <View style={styles.contentProducts}>
+                    <View style={styles.text}>
+                      <Text style={styles.name}>{item.data.productName}</Text>
+                      <Text style={styles.price}>${item.data.price}</Text>
+                    </View>
+                    <View>
+                      <TouchableOpacity
+                        style={
+                          item.data.quantity === "0"
+                            ? styles.buttomSoldOut
+                            : styles.buttom
+                        }
+                        onPress={
+                          item.data.quantity === "0"
+                            ? () => {
+                                console.log("no hay");
+                              }
+                            : () => {
+                                setFirebaseID(item.id),
+                                  handleSnapPress(0),
+                                  setPrice(item.data.price);
+                                setItemName(item.data.productName);
+                                setTotalPrice(item.data.price);
+                                setInitialPrice(item.data.price);
+                                setDetails(item.data.description);
+                                setQuantity(item.data.quantity);
+                              }
+                        }
+                      >
+                        <Text style={styles.textButtom}>
+                          {item.data.quantity === "0" ? "Agotado" : "Detalles"}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            ))}
+        <View></View>
         <Toast ref={(ref) => Toast.setRef(ref)} />
       </ScrollView>
 
@@ -382,7 +534,7 @@ export default function Store({ navigation }) {
           setNumber(1);
           //setIsOpen(false);
 
-          console.log(JSON.stringify(carData));
+          console.log("card item data", JSON.stringify(carData));
         }}
       >
         <BottomSheetView>
@@ -533,6 +685,7 @@ export default function Store({ navigation }) {
                   onPress={() => {
                     toggleModalConfirm();
                     toggleModal();
+
                     console.log(carData);
                   }}
                 >
@@ -621,6 +774,8 @@ export default function Store({ navigation }) {
               : step == 4
               ? "Agregar numero de telefono"
               : step == 5
+              ? "Escoger repartidor"
+              : step == 6
               ? "Recivo"
               : null}
           </Text>
@@ -696,6 +851,36 @@ export default function Store({ navigation }) {
 
           {step === 5 && (
             <>
+              {deliverer.map((item, i) => (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    marginTop: 10,
+                  }}
+                  key={i}
+                >
+                  <RadioButton
+                    value={item.user_id}
+                    status={checked === item.user_id ? "checked" : "unchecked"}
+                    onPress={() => setChecked(item.user_id)}
+                  />
+                  <Text style={{ fontSize: 25 }}>{item.first_name}</Text>
+                </View>
+              ))}
+
+              <RadioButton
+                value="another radio button"
+                status={
+                  checked === "another radio button" ? "checked" : "unchecked"
+                }
+                onPress={() => setChecked("another radio button")}
+              />
+              <Text style={{ fontSize: 25 }}>Another deliverer</Text>
+            </>
+          )}
+          {step === 6 && (
+            <>
               <Text>Total a pagar: ${priceToPay}</Text>
               {carData.map((carItem, i) => (
                 <View style={styles.carItems} key={i}>
@@ -719,7 +904,6 @@ export default function Store({ navigation }) {
               ))}
             </>
           )}
-
           <View style={{ flexDirection: "row" }}>
             <View style={{ marginHorizontal: 10 }}>
               <TouchableOpacity
@@ -738,11 +922,11 @@ export default function Store({ navigation }) {
               <TouchableOpacity
                 style={styles.buttom}
                 onPress={() => {
-                  step === 5 ? postAlert() : stepIncrement();
+                  step === 6 ? postAlert() : stepIncrement();
                 }}
               >
                 <Text style={styles.textButtom}>
-                  {step == 5 ? "Confirmar" : "Siguiente"}
+                  {step == 6 ? "Confirmar" : "Siguiente"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -752,6 +936,7 @@ export default function Store({ navigation }) {
     </>
   );
 }
+
 const styles = StyleSheet.create({
   secondary_backgroud: {
     backgroundColor: COLORS.secondary_backgroud,
@@ -839,6 +1024,13 @@ const styles = StyleSheet.create({
   buttom: {
     alignItems: "center",
     backgroundColor: COLORS.primary_button,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+  },
+  buttomSoldOut: {
+    alignItems: "center",
+    backgroundColor: COLORS.secondary_text,
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 12,
