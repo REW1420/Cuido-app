@@ -6,6 +6,7 @@ import {
   StyleSheet,
   RefreshControl,
   SafeAreaView,
+  Text,
 } from "react-native";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -17,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "../utils/firebase";
 import { signOut } from "firebase/auth";
 import global from "../utils/global";
+import Modal from "react-native-modal";
 //intance the model to create an object
 const orderModel = new Order();
 
@@ -56,14 +58,14 @@ export default function Profile({ navigation }) {
       setRefreshing(false);
     }, 1000);
   }, []);
+
+  const [modal, setModal] = useState(false);
+  const abrirModal = () => {
+    setModal(!modal);
+  };
   return (
     <>
-      <ScrollView
-        style={{ backgroundColor: COLORS.primary_backgroud }}
-        refreshControl={
-          <RefreshControl refreshing={refershing} onRefresh={onRefresh} />
-        }
-      >
+      <ScrollView style={{ backgroundColor: COLORS.primary_backgroud }}>
         <View style={styles.secondary_backgroud}>
           <View style={styles.containerTopLeft}>
             <Image
@@ -71,14 +73,27 @@ export default function Profile({ navigation }) {
               source={require("../assets/CuidoLogoTop.png")}
             />
           </View>
-
           <View style={{ flex: 1 }}>
             <TouchableOpacity
               style={{
                 position: "absolute",
-                right: 16,
-                bottom: 110,
+                right: 60,
+                top: 50,
 
+                width: 50,
+                height: 50,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+             
+            >
+              <Icon name="settings-outline" size={35} color={"gray"} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                right: 16,
+                top: 50,
                 width: 50,
                 height: 50,
                 justifyContent: "center",
@@ -91,7 +106,26 @@ export default function Profile({ navigation }) {
           </View>
         </View>
 
-        <View style={styles.primary_backgroud}></View>
+        <View style={styles.primary_backgroud}>
+          {/* Change source for profile's image from database */}
+          <Image
+            style={{
+              width: 100,
+              height: 100,
+              borderRadius: 50,
+              borderWidth: 5,
+              borderColor: "white",
+              margin: 10,
+              alignContent: "center",
+              left: 100,
+              top: -60,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "white",
+            }}
+            source={require("../../assets/icon.png")}
+          />
+        </View>
 
         {ordersByID.map((item, i) => (
           <ListItem
@@ -129,6 +163,7 @@ const styles = StyleSheet.create({
     padding: SPACING * 2,
     borderRadius: SPACING * 3,
     bottom: SPACING * 2,
+    justifyContent: "center",
   },
 
   container: {
@@ -155,5 +190,11 @@ const styles = StyleSheet.create({
   },
   textValid: {
     color: "green",
+  },
+  text: {
+    color: COLORS.white,
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });

@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Alert,
   RefreshControl,
-  SafeAreaView
+  SafeAreaView,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
@@ -96,7 +96,6 @@ export default function Store({ navigation }) {
     }
   }, [user_id]);
   //google API key
- 
 
   const destination = { latitude: 37.4226711, longitude: -122.0849872 };
   //hooks for the confirm order modal
@@ -325,9 +324,13 @@ export default function Store({ navigation }) {
   };
   //use the data
   const productData2 = useProductData();
+
+  //hook de la data inicial
   const [productData, setProductData] = useState([]);
+  //hook de la data filtrada
   const [filteredData, setFilteredData] = useState([]);
 
+  //funtcion effect para traer la data de firebase
   useEffect(() => {
     const unsubscribe = onSnapshot(
       collection(database, "products"),
@@ -345,6 +348,8 @@ export default function Store({ navigation }) {
 
     return () => unsubscribe();
   }, []);
+
+  //handle para actualizar los datos dependiendo de lo que se busca
   const handleSearch = (text) => {
     setSearchQuery(text);
     const filtered = productData.filter((item) => {
