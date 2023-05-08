@@ -343,6 +343,7 @@ export default function Store({ navigation }) {
           });
         });
         setProductData(products);
+        console.log(productData);
       }
     );
 
@@ -350,6 +351,8 @@ export default function Store({ navigation }) {
   }, []);
 
   //handle para actualizar los datos dependiendo de lo que se busca
+  //hooks for no found data
+  const [noFoundData, setNoFoundData] = useState(false);
   const handleSearch = (text) => {
     setSearchQuery(text);
     const filtered = productData.filter((item) => {
@@ -358,6 +361,10 @@ export default function Store({ navigation }) {
       return itemData.indexOf(textData) > -1;
     });
     setFilteredData(filtered);
+
+    if (filteredData.length === 0) {
+      setNoFoundData(true);
+    }
   };
 
   //hoosk for refershing the view
@@ -369,6 +376,7 @@ export default function Store({ navigation }) {
     }, 1000);
   }, []);
 
+  //vista
   return (
     <>
       <ScrollView
@@ -435,97 +443,111 @@ export default function Store({ navigation }) {
             />
           </View>
         </View>
-        {filteredData.length > 0
-          ? filteredData.map((item, i) => (
-              <View key={i} style={styles.productsContainer}>
-                <View>
-                  <Image
-                    style={styles.image}
-                    source={{ uri: item.data.logoURL }}
-                  />
-                  <View style={styles.contentProducts}>
-                    <View style={styles.text}>
-                      <Text style={styles.name}>{item.data.productName}</Text>
-                      <Text style={styles.price}>${item.data.price}</Text>
-                    </View>
-                    <View>
-                      <TouchableOpacity
-                        style={
-                          item.data.quantity === "0"
-                            ? styles.buttomSoldOut
-                            : styles.buttom
-                        }
-                        onPress={
-                          item.data.quantity === "0"
-                            ? () => {
-                                console.log("no hay");
-                              }
-                            : () => {
-                                setFirebaseID(item.id),
-                                  handleSnapPress(0),
-                                  setPrice(item.data.price);
-                                setItemName(item.data.productName);
-                                setTotalPrice(item.data.price);
-                                setInitialPrice(item.data.price);
-                                setDetails(item.data.description);
-                                setQuantity(item.data.quantity);
-                              }
-                        }
-                      >
-                        <Text style={styles.textButtom}>
-                          {item.data.quantity === "0" ? "Agotado" : "Detalles"}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+        {filteredData.length > 0 ? (
+          filteredData.map((item, i) => (
+            <View key={i} style={styles.productsContainer}>
+              <View>
+                <Image
+                  style={styles.image}
+                  source={{ uri: item.data.logoURL }}
+                />
+                <View style={styles.contentProducts}>
+                  <View style={styles.text}>
+                    <Text style={styles.name}>{item.data.productName}</Text>
+                    <Text style={styles.price}>${item.data.price}</Text>
+                  </View>
+                  <View>
+                    <TouchableOpacity
+                      style={
+                        item.data.quantity === "0"
+                          ? styles.buttomSoldOut
+                          : styles.buttom
+                      }
+                      onPress={
+                        item.data.quantity === "0"
+                          ? () => {
+                              console.log("no hay");
+                            }
+                          : () => {
+                              setFirebaseID(item.id),
+                                handleSnapPress(0),
+                                setPrice(item.data.price);
+                              setItemName(item.data.productName);
+                              setTotalPrice(item.data.price);
+                              setInitialPrice(item.data.price);
+                              setDetails(item.data.description);
+                              setQuantity(item.data.quantity);
+                            }
+                      }
+                    >
+                      <Text style={styles.textButtom}>
+                        {item.data.quantity === "0" ? "Agotado" : "Detalles"}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
-            ))
-          : productData.map((item, i) => (
-              <View key={i} style={styles.productsContainer}>
-                <View>
-                  <Image
-                    style={styles.image}
-                    source={{ uri: item.data.logoURL }}
-                  />
-                  <View style={styles.contentProducts}>
-                    <View style={styles.text}>
-                      <Text style={styles.name}>{item.data.productName}</Text>
-                      <Text style={styles.price}>${item.data.price}</Text>
-                    </View>
-                    <View>
-                      <TouchableOpacity
-                        style={
-                          item.data.quantity === "0"
-                            ? styles.buttomSoldOut
-                            : styles.buttom
-                        }
-                        onPress={
-                          item.data.quantity === "0"
-                            ? () => {
-                                console.log("no hay");
-                              }
-                            : () => {
-                                setFirebaseID(item.id),
-                                  handleSnapPress(0),
-                                  setPrice(item.data.price);
-                                setItemName(item.data.productName);
-                                setTotalPrice(item.data.price);
-                                setInitialPrice(item.data.price);
-                                setDetails(item.data.description);
-                                setQuantity(item.data.quantity);
-                              }
-                        }
-                      >
-                        <Text style={styles.textButtom}>
-                          {item.data.quantity === "0" ? "Agotado" : "Detalles"}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+            </View>
+          ))
+        ) : noFoundData === true ? (
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ fontSize: 20, textAlign: "center" }}>
+              No se encontraron resultados para la búsqueda realizada.
+            </Text>
+          </View>
+        ) : (
+          productData.map((item, i) => (
+            <View key={i} style={styles.productsContainer}>
+              <View>
+                <Image
+                  style={styles.image}
+                  source={{ uri: item.data.logoURL }}
+                />
+                <View style={styles.contentProducts}>
+                  <View style={styles.text}>
+                    <Text style={styles.name}>{item.data.productName}</Text>
+                    <Text style={styles.price}>${item.data.price}</Text>
+                  </View>
+                  <View>
+                    <TouchableOpacity
+                      style={
+                        item.data.quantity === "0"
+                          ? styles.buttomSoldOut
+                          : styles.buttom
+                      }
+                      onPress={
+                        item.data.quantity === "0"
+                          ? () => {
+                              console.log("no hay");
+                            }
+                          : () => {
+                              setFirebaseID(item.id),
+                                handleSnapPress(0),
+                                setPrice(item.data.price);
+                              setItemName(item.data.productName);
+                              setTotalPrice(item.data.price);
+                              setInitialPrice(item.data.price);
+                              setDetails(item.data.description);
+                              setQuantity(item.data.quantity);
+                            }
+                      }
+                    >
+                      <Text style={styles.textButtom}>
+                        {item.data.quantity === "0" ? "Agotado" : "Detalles"}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
-            ))}
+            </View>
+          ))
+        )}
         <View></View>
         <Toast ref={(ref) => Toast.setRef(ref)} />
       </ScrollView>

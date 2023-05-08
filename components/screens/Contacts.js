@@ -53,6 +53,7 @@ function useContactData() {
           });
         });
         setData(contacs);
+        console.log(data);
       }
     );
 
@@ -68,17 +69,57 @@ export default function Contacts() {
   const bottomSheetRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
 
-
   const snapPoints = ["45%"];
 
   //use of contact data
-  const contactData = useContactData();
-  console.log(contactData);
+  //const contactData = useContactData();
+ // console.log('?',contactData);
 
   const handleSnapPress = useCallback((index) => {
     bottomSheetRef.current?.snapToIndex(index);
   }, []);
 
+  //aqui
+
+  //hook de la data inicial
+  const [contactData, setContactData] = useState([]);
+  //hook de la data filtrada
+  const [filteredData, setFilteredData] = useState([]);
+
+  //funtcion effect para traer la data de firebase
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(database, "contacts"),
+      (querySnapshot) => {
+        const contact = [];
+        querySnapshot.forEach((doc) => {
+          contact.push({
+            id: doc.id,
+            data: doc.data(),
+          });
+        });
+        setContactData(contact);
+        console.log('contact data',contactData)
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+  //hooks for no found data
+  const [noFoundData, setNoFoundData] = useState(false);
+  //handle para actualizar los datos dependiendo de lo que se busca
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    const filtered = contactData.filter((item) => {
+      const itemData = item.data.contactName.toLowerCase();
+      const textData = text.toLowerCase();
+      return itemData.indexOf(textData) > -1;
+    });
+    setFilteredData(filtered);
+    if (filteredData.length === 0) {
+      setNoFoundData(true);
+    }
+  };
   return (
     <>
       <ScrollView style={{ backgroundColor: COLORS.primary_backgroud }}>
@@ -97,40 +138,73 @@ export default function Contacts() {
               containerStyle={styles.searchContainer}
               inputContainerStyle={styles.inputContainer}
               inputStyle={styles.input}
-              onChangeText={(text) => setSearchQuery(text)}
+              onChangeText={handleSearch}
               value={searchQuery}
-              onCancel={() => setSearchQuery("")}
+             
             />
           </View>
         </View>
         <View>
-          {contactData.map((item, i) => (
-            <ListItem
-              key={i}
-              bottomDivider
+          {filteredData.length > 0 ? (
+            filteredData.map((item, i) => (
+              <ListItem
+                key={i}
+                bottomDivider
+                style={{
+                  backgroundColor: COLORS.secondary_backgroud,
+                  margin: 5,
+                }}
+                onPress={() => {
+                  setItem(item.data);
+                  handleSnapPress(0);
+                }}
+              >
+                <Avatar source={{ uri: item.data.logoURL }} />
+                <ListItem.Content>
+                  <ListItem.Title>{item.data.contactName}</ListItem.Title>
+                </ListItem.Content>
+                <ListItem.Chevron />
+              </ListItem>
+            ))
+          ) : noFoundData === true ? (
+            <View
               style={{
-                backgroundColor: COLORS.secondary_backgroud,
-                margin: 5,
-              }}
-              onPress={() => {
-                setItem(item.data);
-                handleSnapPress(0)
-               
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              <Avatar source={{ uri: item.data.logoURL }} />
-              <ListItem.Content>
-                <ListItem.Title>{item.data.contactName}</ListItem.Title>
-              </ListItem.Content>
-              <ListItem.Chevron />
-            </ListItem>
-          ))}
+              <Text style={{ fontSize: 20, textAlign: "center" }}>
+                No se encontraron resultados para la búsqueda realizada.
+              </Text>
+            </View>
+          ) : (
+            contactData.map((item, i) => (
+              <ListItem
+                key={i}
+                bottomDivider
+                style={{
+                  backgroundColor: COLORS.secondary_backgroud,
+                  margin: 5,
+                }}
+                onPress={() => {
+                  setItem(item.data);
+                  handleSnapPress(0);
+                }}
+              >
+                <Avatar source={{ uri: item.data.logoURL }} />
+                <ListItem.Content>
+                  <ListItem.Title>{item.data.contactName}</ListItem.Title>
+                </ListItem.Content>
+                <ListItem.Chevron />
+              </ListItem>
+            ))
+          )}
         </View>
       </ScrollView>
 
       <BottomSheet
         index={-1}
-        
         enablePanDownToClose={true}
         ref={bottomSheetRef}
         snapPoints={snapPoints}
@@ -139,21 +213,21 @@ export default function Contacts() {
         }}
       >
         <BottomSheetView style={styles.bottomSheetContainer}>
-        <View style={styles.details_logo_container}>
+          <View style={styles.details_logo_container}>
             <Image
               style={styles.details_logo}
               source={{ uri: bitem.logoURL }}
             />
           </View>
 
-          <View style={[styles.textContainer, { marginTop: 20 }]}> 
+          <View style={[styles.textContainer, { marginTop: 20 }]}>
             <Icon
               name="call-sharp"
               size={20}
               color="black"
               style={{ marginRight: 10 }}
             />
-            <Text style={{ color: "black" }}>{bitem.contactName }</Text>
+            <Text style={{ color: "black" }}>{bitem.contactName}</Text>
           </View>
 
           <View style={styles.textContainer}>
@@ -173,7 +247,7 @@ export default function Contacts() {
               color="black"
               style={{ marginRight: 10 }}
             />
-            <Text style={{ color: "black" }}>{bitem.services },</Text>
+            <Text style={{ color: "black" }}>{bitem.services},</Text>
           </View>
 
           <View style={styles.Buttoncontainer}>

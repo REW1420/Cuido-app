@@ -1,5 +1,3 @@
-
-
 export default class Order {
   // Método para crear un nuevo pedido
   async createOrder(orderData) {
@@ -22,6 +20,26 @@ export default class Order {
   async getOrdersFiltered(user_id) {
     const response = await fetch(
       `https://cuido-middleware.000webhostapp.com/api/orders/code/${user_id}`
+    );
+    const orders = await response.json();
+    console.log(orders);
+    return orders;
+  }
+
+  //obtener ordenes completadas
+
+  async getPaidOrders(user_id) {
+    const response = await fetch(
+      `https://cuido-middleware.000webhostapp.com/api/orders/paid/client/${user_id}`
+    );
+    const orders = await response.json();
+    console.log(orders);
+    return orders;
+  }
+
+  async getNoPaidOrders(user_id) {
+    const response = await fetch(
+      `https://cuido-middleware.000webhostapp.com/api/orders/noPaid/client/${user_id}`
     );
     const orders = await response.json();
     console.log(orders);

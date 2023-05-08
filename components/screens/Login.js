@@ -100,6 +100,8 @@ export default function Login({ navigation }) {
                 console.log(e.message);
                 if (e.code === "auth/wrong-password") {
                   showLoginError("Contraseña incorrecta");
+                } else if(e.code === "auth/network-request-failed"){
+                  showLoginError("Error de red, por favor intentelo denuevo")
                 }
               });
             break;
@@ -142,7 +144,9 @@ export default function Login({ navigation }) {
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.inputTxt}
-                placeholder="ejemplo@dominio.com"
+                
+                keyboardType="email-address"
+                autoCapitalize="none"
                 placeholderTextColor={COLORS.input_text}
                 onChangeText={(text) => {
                   setUser(text);
@@ -160,7 +164,7 @@ export default function Login({ navigation }) {
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.inputTxt}
-                placeholder="****"
+               
                 autoCapitalize="none"
                 autoCorrect={false}
                 secureTextEntry={passwordVisibility}
