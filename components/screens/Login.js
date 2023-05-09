@@ -24,9 +24,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
 import global from "../utils/global";
 import UserModel from "../MVC/UserModel";
+import LocarUserModel from '../MVC/LocalUserModel'
 const userModel = new UserModel();
+const localUserModel = new LocarUserModel()
 const { width, height } = Dimensions.get("screen");
-
 const userID = AsyncStorage.getItem("user_id");
 export default function Login({ navigation }) {
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function Login({ navigation }) {
     if (user === "" && password === "") {
       showToastError();
     } else {
-      userModel.getUserRoleByEmail(user).then((data) => {
+      localUserModel.getUserRoleByEmail(user).then((data) => {
         const role = data.role;
         switch (role) {
           case "client":
@@ -92,6 +93,7 @@ export default function Login({ navigation }) {
             signInWithEmailAndPassword(auth, user, password)
               .then((userCredential) => {
                 global.user_id = userCredential.user.uid;
+                global.email = userCredential.user.email;
                 console.log("user id", global.user_id);
                 navigation.navigate("MainNav");
               })
@@ -100,8 +102,8 @@ export default function Login({ navigation }) {
                 console.log(e.message);
                 if (e.code === "auth/wrong-password") {
                   showLoginError("Contraseña incorrecta");
-                } else if(e.code === "auth/network-request-failed"){
-                  showLoginError("Error de red, por favor intentelo denuevo")
+                } else if (e.code === "auth/network-request-failed") {
+                  showLoginError("Error de red, por favor intentelo denuevo");
                 }
               });
             break;
@@ -144,7 +146,6 @@ export default function Login({ navigation }) {
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.inputTxt}
-                
                 keyboardType="email-address"
                 autoCapitalize="none"
                 placeholderTextColor={COLORS.input_text}
@@ -164,7 +165,6 @@ export default function Login({ navigation }) {
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.inputTxt}
-               
                 autoCapitalize="none"
                 autoCorrect={false}
                 secureTextEntry={passwordVisibility}

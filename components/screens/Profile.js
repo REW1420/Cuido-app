@@ -10,6 +10,7 @@ import {
   Dimensions,
   Pressable,
   TextInput,
+  Alert,
 } from "react-native";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -24,22 +25,33 @@ import global from "../utils/global";
 import Modal from "react-native-modal";
 import moment from "moment/moment";
 import UserModel from "../MVC/UserModel";
-import { sendPasswordResetEmail } from "firebase/auth";
+import { useTogglePasswordVisibility } from "../utils/useTogglePasswordVisibility";
+
+import {
+  sendPasswordResetEmail,
+  updateEmail,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 import Toast from "react-native-toast-message";
-Toast;
+import LocalOrderModel from "../MVC/LocalOrderMovel";
+import LocalUserModel from "../MVC/LocalUserModel";
 
 const height = Dimensions.get("screen").height;
 
 //intance the model to create an object
 const orderModel = new Order();
 const userModel = new UserModel();
+const localOrderModel = new LocalOrderModel();
+const localUserModel = new LocalUserModel();
 
 function useOrderData() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     async function fetchOrders() {
-      const ordersResponse = await orderModel.getOrdersFiltered(global.user_id);
+      const ordersResponse = await localOrderModel.getOrdersFiltered(
+        global.user_id
+      );
       setData(ordersResponse);
     }
 
@@ -71,7 +83,7 @@ export default function Profile({ navigation }) {
     setTimeout(() => {
       try {
       } catch (e) {
-        const userData = userModel.getUserDataByID(global.user_id);
+        const userData = localUserModel.getUserDataByID(global.user_id);
         setUserData(userData);
         console.log("refreshing");
       }
@@ -107,16 +119,20 @@ export default function Profile({ navigation }) {
 
   useEffect(() => {
     async function getUserData() {
-      const userData = await userModel.getUserDataByID(global.user_id);
+      const userData = await localUserModel.getUserDataByID(global.user_id);
       setUserData(userData);
     }
     async function getNoPaidOrders() {
-      const ordersResponse = await orderModel.getNoPaidOrders(global.user_id);
+      const ordersResponse = await localOrderModel.getNoPaidOrders(
+        global.user_id
+      );
       setNoPaidOrder(ordersResponse);
     }
 
     async function getPaidOrders() {
-      const ordersResponse = await orderModel.getPaidOrders(global.user_id);
+      const ordersResponse = await localOrderModel.getPaidOrders(
+        global.user_id
+      );
       setPaidOrder(ordersResponse);
     }
 
@@ -134,24 +150,59 @@ export default function Profile({ navigation }) {
   const [resetPassModalV, setResetPassModalV] = useState(false);
 
   const resetPassModal = () => setResetPassModalV(!resetPassModalV);
+
+  //change email
+  const [changeEmailVisible, setChangeEmailVisible] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const toggleChangeEmailModal = () =>
+    setChangeEmailVisible(!changeEmailVisible);
+  //funtion to change email address
+  const handleChangeEmail = async () => {
+    await signInWithEmailAndPassword(auth, global.email, password).then(
+      (userCredential) => {
+        updateEmail(userCredential.user, newEmail)
+          .then(userCredential)
+          .then(() => {
+            const newUserData = {
+              email: newEmail,
+            };
+            localUserModel
+              .updateUserEmail(global.user_id, newUserData)
+              .then(() => {
+                showGoHomeAlert();
+              });
+          });
+      }
+    );
+  };
   //hook for settings account modal visibility
   const [isSettingModalVisible, setIsSettingModalVisible] = useState(false);
 
   const toggleSettingsModal = () => {
     setIsSettingModalVisible(!isSettingModalVisible);
+    userData.forEach((item, i) => {
+      setNewLastName(item.second_name);
+      setNewNade(item.first_name);
+      setNewPhoneNumber(item.phone_number);
+    });
   };
   //hook for email
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const showToastInvalidEmail = () => {
-    Toast.show({
-      type: "error",
-      text1: "Error",
-      text2: "Correo invalido",
-      visibilityTime: 3000,
-      position: "top",
-    });
-  };
+  const showGoHomeAlert = () =>
+    Alert.alert(
+      "Se han actualizado los datos correctamente",
+      "Vuelva a iniciar sesion",
+      [
+        {
+          text: "Confirmar",
+          onPress: () => {
+            handleSingOut();
+          },
+        },
+      ]
+    );
   const [inalivEmail, setInvalidEmail] = useState(false);
   const [userFound, userNotFound] = useState(false);
   const resetPass = async () => {
@@ -168,6 +219,47 @@ export default function Profile({ navigation }) {
           console.log(e.code, e.message);
         });
     }
+  };
+
+  const { passwordVisibility, rightIcon, handlePasswordVisibility } =
+    useTogglePasswordVisibility();
+
+  //new user data hooks
+  const [newName, setNewNade] = useState("");
+  const [newLastName, setNewLastName] = useState("");
+  const [newPhoneNumber, setNewPhoneNumber] = useState(0);
+
+  const updateUserData = async () => {
+    const newUserDataL = {
+      first_name: newName,
+      second_name: newLastName,
+      phone_number: newPhoneNumber,
+    };
+    await localUserModel
+      .updateUserData(global.user_id, newUserDataL)
+      .then(() => {
+        toggleSettingsModal();
+        showUpdateToast();
+      });
+  };
+
+  const showUpdateToast = () => {
+    Toast.show({
+      type: "success",
+      text1: "Datos actualizados correctamente",
+      visibilityTime: 1000,
+      position: "top",
+    });
+  };
+  const handleChange = (event) => {
+    setNewPhoneNumber(event.target.value);
+    setNewNade(event.target.value);
+    setNewLastName(event.target.value);
+    console.log(newName);
+  };
+   //handle text form
+   const handleText = (value, setState) => {
+    setState(value);
   };
   return (
     <>
@@ -471,6 +563,7 @@ export default function Profile({ navigation }) {
                 </ListItem>
               ))
             )}
+            <Toast ref={Toast.setRef} />
           </ScrollView>
         </View>
       </Modal>
@@ -483,11 +576,47 @@ export default function Profile({ navigation }) {
         <View style={styles.modalBackdround}>
           <Text style={styles.modalHeader}>Configuracion de cuenta</Text>
 
+          <View style={{ width: "100%" }}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.inputTxt}
+                placeholder="Ingrese su nombre"
+                autoCapitalize="none"
+                placeholderTextColor={COLORS.input_text}
+                onChangeText={(value)=>handleText(value,setNewNade)}
+                value={newName}
+              />
+              <TextInput
+                style={styles.inputTxt}
+                placeholder="Ingrese su apellido"
+                autoCapitalize="none"
+                placeholderTextColor={COLORS.input_text}
+                onChangeText={(value)=>handleText(value,setNewLastName)}
+                value={newLastName}
+              />
+              <TextInput
+                style={styles.inputTxt}
+                placeholder="Ingrese su numero de telefono"
+                autoCapitalize="none"
+                placeholderTextColor={COLORS.input_text}
+                keyboardType="numeric"
+                onChangeText={(value)=>handleText(value,setNewPhoneNumber)}
+                value={newPhoneNumber}
+              />
+
+              <TouchableOpacity style={styles.button} onPress={updateUserData}>
+                <Text style={styles.button_text}>Actualizar datos</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <View style={{ flexDirection: "row" }}>
             <TouchableOpacity style={styles.button} onPress={resetPassModal}>
               <Text style={styles.button_text}>Cambiar contraseña</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={toggleChangeEmailModal}
+            >
               <Text style={styles.button_text}>Cambiar correo</Text>
             </TouchableOpacity>
           </View>
@@ -525,6 +654,64 @@ export default function Profile({ navigation }) {
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={resetPass}>
               <Text style={styles.button_text}>Cambiar contraseña</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        isVisible={changeEmailVisible}
+        onBackdropPress={toggleChangeEmailModal}
+      >
+        <View style={styles.modalBackdround}>
+          <Text style={styles.modalHeader}>Cambiar correo</Text>
+          {inalivEmail === true ? <Text>Ingrese un correo valido</Text> : ""}
+          {userFound === true ? (
+            <Text>
+              No se encontro cuenta asociada al correo, verifique que su correo
+              este bien escrito
+            </Text>
+          ) : (
+            ""
+          )}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.inputTxt}
+              keyboardType="email-address"
+              placeholder="Ingrese su nuevo correo"
+              autoCapitalize="none"
+              placeholderTextColor={COLORS.input_text}
+              onChangeText={(text) => {
+                setNewEmail(text);
+              }}
+              value={newEmail}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.inputTxt}
+              autoCapitalize="none"
+              placeholder="Ingrese su contraseña actual"
+              autoCorrect={false}
+              secureTextEntry={passwordVisibility}
+              placeholderTextColor={COLORS.input_text}
+              onChangeText={(text) => {
+                setPassword(text);
+              }}
+            />
+            <Pressable onPress={handlePasswordVisibility}>
+              <Icon name={rightIcon} size={22} color="#232323" />
+            </Pressable>
+          </View>
+          <View style={{ flexDirection: "row" }}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={toggleChangeEmailModal}
+            >
+              <Text style={styles.button_text}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleChangeEmail}>
+              <Text style={styles.button_text}>Cambiar correo</Text>
             </TouchableOpacity>
           </View>
         </View>
