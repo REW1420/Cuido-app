@@ -459,12 +459,12 @@ export default function Store({ navigation }) {
                   <View>
                     <TouchableOpacity
                       style={
-                        item.data.quantity === "0"
+                        item.data.quantity === 0
                           ? styles.buttomSoldOut
                           : styles.buttom
                       }
                       onPress={
-                        item.data.quantity === "0"
+                        item.data.quantity === 0
                           ? () => {
                               console.log("no hay");
                             }
@@ -481,7 +481,7 @@ export default function Store({ navigation }) {
                       }
                     >
                       <Text style={styles.textButtom}>
-                        {item.data.quantity === "0" ? "Agotado" : "Detalles"}
+                        {item.data.quantity === 0 ? "Agotado" : "Detalles"}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -517,7 +517,7 @@ export default function Store({ navigation }) {
                   <View>
                     <TouchableOpacity
                       style={
-                        item.data.quantity === "0"
+                        item.data.quantity === 0
                           ? styles.buttomSoldOut
                           : styles.buttom
                       }
@@ -539,7 +539,7 @@ export default function Store({ navigation }) {
                       }
                     >
                       <Text style={styles.textButtom}>
-                        {item.data.quantity === "0" ? "Agotado" : "Detalles"}
+                        {item.data.quantity === 0 ? "Agotado" : "Detalles"}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -549,7 +549,7 @@ export default function Store({ navigation }) {
           ))
         )}
         <View></View>
-        <Toast ref={(ref) => Toast.setRef(ref)} />
+        <Toast ref={Toast.setRef} />
       </ScrollView>
 
       <BottomSheet
@@ -595,6 +595,19 @@ export default function Store({ navigation }) {
               ${totalPrice}
             </Text>
           </View>
+          <View
+            style={{
+              justifyContent: "center",
+              alignItems: "center",
+             
+              marginBottom: 10,
+              flexDirection: "row",
+            }}
+          >
+            <Text style={{ color: "black", marginBottom: 10, fontWeight:'bold'}}>
+              Disponible: {quantity}
+            </Text>
+          </View>
 
           <View style={{ flexDirection: "row" }}>
             <View
@@ -619,7 +632,7 @@ export default function Store({ navigation }) {
                   <Text style={styles.textButtom}>-</Text>
                 </TouchableOpacity>
               </View>
-              <Text style={{ textDecorationLine: "underline" }}>{number}</Text>
+              <Text style={{ textDecorationLine: "underline" }}>{number} de {quantity}</Text>
               <View style={styles.container}>
                 <TouchableOpacity
                   onPress={() => {
@@ -667,7 +680,7 @@ export default function Store({ navigation }) {
           >
             <Text style={{ fontSize: 25, fontWeight: "bold" }}>Carrito</Text>
             {carData.map((carItem, i) => (
-              <View style={styles.carItems}>
+              <View style={styles.carItems} key={i}>
                 <View
                   style={{
                     flex: 1,
@@ -817,6 +830,7 @@ export default function Store({ navigation }) {
                     justifyContent: "space-between",
                     marginHorizontal: 10,
                   }}
+                  key={i}
                 >
                   <Text style={{ fontWeight: "bold", margin: 5 }}>
                     {carItem.name}
@@ -895,15 +909,6 @@ export default function Store({ navigation }) {
                   <Text style={{ fontSize: 25 }}>{item.first_name}</Text>
                 </View>
               ))}
-
-              <RadioButton
-                value="another radio button"
-                status={
-                  checked === "another radio button" ? "checked" : "unchecked"
-                }
-                onPress={() => setChecked("another radio button")}
-              />
-              <Text style={{ fontSize: 25 }}>Another deliverer</Text>
             </>
           )}
           {step === 6 && (

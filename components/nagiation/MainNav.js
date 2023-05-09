@@ -4,10 +4,8 @@ import { createStackNavigator } from "@react-navigation/stack";
 import Profile from "../screens/Profile";
 import Store from "../screens/Store";
 import Contacts from "../screens/Contacts";
-import OrderConfirmNav from "../nagiation/OrderConfirmNav";
 import Icon from "react-native-vector-icons/Ionicons";
-import ConfirmOrder from "../screens/ConfirmOrder";
-import ConfirmDelivery from "../screens/ConfirmDelivery";
+
 const TabBar = createBottomTabNavigator();
 const Stack = createStackNavigator();
 

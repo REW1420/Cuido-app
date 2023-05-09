@@ -49,9 +49,7 @@ function useOrderData() {
 
   useEffect(() => {
     async function fetchOrders() {
-      const ordersResponse = await localOrderModel.getOrdersFiltered(
-        global.user_id
-      );
+      const ordersResponse = await userModel.getOrdersFiltered(global.user_id);
       setData(ordersResponse);
     }
 
@@ -82,10 +80,11 @@ export default function Profile({ navigation }) {
     setRefreshing(true);
     setTimeout(() => {
       try {
-      } catch (e) {
-        const userData = localUserModel.getUserDataByID(global.user_id);
+        const userData = userModel.getUserDataByID(global.user_id);
         setUserData(userData);
         console.log("refreshing");
+      } catch (e) {
+        console(e);
       }
       setRefreshing(false);
     }, 1000);
@@ -119,20 +118,16 @@ export default function Profile({ navigation }) {
 
   useEffect(() => {
     async function getUserData() {
-      const userData = await localUserModel.getUserDataByID(global.user_id);
+      const userData = await userModel.getUserDataByID(global.user_id);
       setUserData(userData);
     }
     async function getNoPaidOrders() {
-      const ordersResponse = await localOrderModel.getNoPaidOrders(
-        global.user_id
-      );
+      const ordersResponse = await orderModel.getNoPaidOrders(global.user_id);
       setNoPaidOrder(ordersResponse);
     }
 
     async function getPaidOrders() {
-      const ordersResponse = await localOrderModel.getPaidOrders(
-        global.user_id
-      );
+      const ordersResponse = await orderModel.getPaidOrders(global.user_id);
       setPaidOrder(ordersResponse);
     }
 
@@ -166,11 +161,9 @@ export default function Profile({ navigation }) {
             const newUserData = {
               email: newEmail,
             };
-            localUserModel
-              .updateUserEmail(global.user_id, newUserData)
-              .then(() => {
-                showGoHomeAlert();
-              });
+            userModel.updateUserEmail(global.user_id, newUserData).then(() => {
+              showGoHomeAlert();
+            });
           });
       }
     );
@@ -235,12 +228,10 @@ export default function Profile({ navigation }) {
       second_name: newLastName,
       phone_number: newPhoneNumber,
     };
-    await localUserModel
-      .updateUserData(global.user_id, newUserDataL)
-      .then(() => {
-        toggleSettingsModal();
-        showUpdateToast();
-      });
+    await userModel.updateUserData(global.user_id, newUserDataL).then(() => {
+      toggleSettingsModal();
+      showUpdateToast();
+    });
   };
 
   const showUpdateToast = () => {
@@ -257,8 +248,8 @@ export default function Profile({ navigation }) {
     setNewLastName(event.target.value);
     console.log(newName);
   };
-   //handle text form
-   const handleText = (value, setState) => {
+  //handle text form
+  const handleText = (value, setState) => {
     setState(value);
   };
   return (
@@ -377,6 +368,7 @@ export default function Profile({ navigation }) {
               justifyContent: "center",
               margin: 30,
             }}
+            key={i}
           >
             <Text>Aun no hay pedidos completados</Text>
           </View>
@@ -446,6 +438,7 @@ export default function Profile({ navigation }) {
                   justifyContent: "space-between",
                   marginHorizontal: 20,
                 }}
+                key={i}
               >
                 <Text style={{ margin: 5 }}>{item.name}</Text>
                 <Text style={{ margin: 5 }}>{item.quantity}</Text>
@@ -493,10 +486,8 @@ export default function Profile({ navigation }) {
               }}
             >
               <Text style={{ margin: 5, fontWeight: "bold" }}>Pagado en:</Text>
-              <Text style={isPaid === true ? styles.isPaid : styles.isNotPaid}>
-                {isPaid === true
-                  ? moment(update_at).format("DD/MM/YYYY hh:mm:ss A")
-                  : "Pendiente"}
+              <Text style={styles.isPaid}>
+                {moment(update_at).format("DD/MM/YYYY hh:mm:ss A")}
               </Text>
             </View>
           </View>
@@ -583,7 +574,7 @@ export default function Profile({ navigation }) {
                 placeholder="Ingrese su nombre"
                 autoCapitalize="none"
                 placeholderTextColor={COLORS.input_text}
-                onChangeText={(value)=>handleText(value,setNewNade)}
+                onChangeText={(value) => handleText(value, setNewNade)}
                 value={newName}
               />
               <TextInput
@@ -591,7 +582,7 @@ export default function Profile({ navigation }) {
                 placeholder="Ingrese su apellido"
                 autoCapitalize="none"
                 placeholderTextColor={COLORS.input_text}
-                onChangeText={(value)=>handleText(value,setNewLastName)}
+                onChangeText={(value) => handleText(value, setNewLastName)}
                 value={newLastName}
               />
               <TextInput
@@ -600,7 +591,7 @@ export default function Profile({ navigation }) {
                 autoCapitalize="none"
                 placeholderTextColor={COLORS.input_text}
                 keyboardType="numeric"
-                onChangeText={(value)=>handleText(value,setNewPhoneNumber)}
+                onChangeText={(value) => handleText(value, setNewPhoneNumber)}
                 value={newPhoneNumber}
               />
 

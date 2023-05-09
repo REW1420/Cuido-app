@@ -24,9 +24,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
 import global from "../utils/global";
 import UserModel from "../MVC/UserModel";
-import LocarUserModel from '../MVC/LocalUserModel'
+import LocarUserModel from "../MVC/LocalUserModel";
 const userModel = new UserModel();
-const localUserModel = new LocarUserModel()
+const localUserModel = new LocarUserModel();
 const { width, height } = Dimensions.get("screen");
 const userID = AsyncStorage.getItem("user_id");
 export default function Login({ navigation }) {
@@ -85,7 +85,7 @@ export default function Login({ navigation }) {
     if (user === "" && password === "") {
       showToastError();
     } else {
-      localUserModel.getUserRoleByEmail(user).then((data) => {
+      userModel.getUserRoleByEmail(user).then((data) => {
         const role = data.role;
         switch (role) {
           case "client":

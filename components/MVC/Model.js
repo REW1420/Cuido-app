@@ -1,16 +1,13 @@
-export default class Order {
+export default class Model {
   // Método para crear un nuevo pedido
   async createOrder(orderData) {
-    const response = await fetch(
-      "https://cuido-middleware.000webhostapp.com/api/orders",
-      {
-        method: "POST",
-        body: JSON.stringify(orderData),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetch("https://cuido-middleware.000webhostapp.com/api/orders", {
+      method: "POST",
+      body: JSON.stringify(orderData),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     const newOrder = await response.json();
     console.log(newOrder); // Agregar esta línea para imprimir la respuesta en la consola
     return newOrder;
