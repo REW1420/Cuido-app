@@ -368,7 +368,7 @@ export default function Profile({ navigation }) {
               justifyContent: "center",
               margin: 30,
             }}
-            key={i}
+           
           >
             <Text>Aun no hay pedidos completados</Text>
           </View>
