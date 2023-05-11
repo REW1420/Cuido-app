@@ -16,8 +16,6 @@ export default function LoginNav() {
           <Stack.Screen name={"login"} component={Login} />
           <Stack.Screen name={"sing-up"} component={SingUp} />
           <Stack.Screen name="MainNav" component={MainNav} />
-
-          
         </Stack.Navigator>
       </NavigationContainer>
     </>

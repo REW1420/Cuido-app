@@ -76,16 +76,27 @@ export default function Profile({ navigation }) {
   const [userData, setUserData] = useState([]);
   //hoosk for refershing the view
   const [refershing, setRefreshing] = useState(false);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => {
-      try {
-        const userData = userModel.getUserDataByID(global.user_id);
+    setTimeout(async () => {
+      async function getUserData() {
+        const userData = await userModel.getUserDataByID(global.user_id);
         setUserData(userData);
-        console.log("refreshing");
-      } catch (e) {
-        console(e);
       }
+      async function getNoPaidOrders() {
+        const ordersResponse = await orderModel.getNoPaidOrders(global.user_id);
+        setNoPaidOrder(ordersResponse);
+      }
+
+      async function getPaidOrders() {
+        const ordersResponse = await orderModel.getPaidOrders(global.user_id);
+        setPaidOrder(ordersResponse);
+      }
+
+      getPaidOrders();
+      getNoPaidOrders();
+      getUserData();
       setRefreshing(false);
     }, 1000);
   }, []);
@@ -223,15 +234,7 @@ export default function Profile({ navigation }) {
   const [newPhoneNumber, setNewPhoneNumber] = useState(0);
 
   const updateUserData = async () => {
-    const newUserDataL = {
-      first_name: newName,
-      second_name: newLastName,
-      phone_number: newPhoneNumber,
-    };
-    await userModel.updateUserData(global.user_id, newUserDataL).then(() => {
-      toggleSettingsModal();
-      showUpdateToast();
-    });
+    console.log("?");
   };
 
   const showUpdateToast = () => {
@@ -368,7 +371,6 @@ export default function Profile({ navigation }) {
               justifyContent: "center",
               margin: 30,
             }}
-           
           >
             <Text>Aun no hay pedidos completados</Text>
           </View>
@@ -387,8 +389,12 @@ export default function Profile({ navigation }) {
                 setOrderID(item.id);
                 setUpdate_at(item.order_updated_at);
                 setCreated_at(item.created_at);
-                setIsPaid(item.paid);
                 toggleModal();
+                if (item.paid === 1 && item.delivered === 1) {
+                  setIsPaid(true);
+                } else if (item.paid === 0 && item.delivered === 0) {
+                  setIsPaid(false);
+                }
               }}
             >
               <ListItem.Content>
@@ -486,8 +492,10 @@ export default function Profile({ navigation }) {
               }}
             >
               <Text style={{ margin: 5, fontWeight: "bold" }}>Pagado en:</Text>
-              <Text style={styles.isPaid}>
-                {moment(update_at).format("DD/MM/YYYY hh:mm:ss A")}
+              <Text style={isPaid === true ? styles.isPaid : styles.isNotPaid}>
+                {isPaid === true
+                  ? moment(update_at).format("DD/MM/YYYY hh:mm:ss A")
+                  : "Pendiente"}
               </Text>
             </View>
           </View>
@@ -534,7 +542,12 @@ export default function Profile({ navigation }) {
                     setOrderID(item.id);
                     setUpdate_at(item.order_updated_at);
                     setCreated_at(item.created_at);
-                    setIsPaid(item.paid);
+                    if (item.paid === 1 && item.delivered === 1) {
+                      setIsPaid(true);
+                    } else if (item.paid === 0 && item.delivered === 0) {
+                      setIsPaid(false);
+                    }
+
                     toggleModal();
                   }}
                 >
@@ -595,7 +608,10 @@ export default function Profile({ navigation }) {
                 value={newPhoneNumber}
               />
 
-              <TouchableOpacity style={styles.button} onPress={updateUserData}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => updateUserData}
+              >
                 <Text style={styles.button_text}>Actualizar datos</Text>
               </TouchableOpacity>
             </View>

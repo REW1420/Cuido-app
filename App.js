@@ -2,10 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import LoginNav from "./components/nagiation/LoginNav";
 import Screen from "./components/screens/SplashScreen";
 
-
 export default function App() {
-
-
   const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {

@@ -599,12 +599,14 @@ export default function Store({ navigation }) {
             style={{
               justifyContent: "center",
               alignItems: "center",
-             
+
               marginBottom: 10,
               flexDirection: "row",
             }}
           >
-            <Text style={{ color: "black", marginBottom: 10, fontWeight:'bold'}}>
+            <Text
+              style={{ color: "black", marginBottom: 10, fontWeight: "bold" }}
+            >
               Disponible: {quantity}
             </Text>
           </View>
@@ -632,7 +634,9 @@ export default function Store({ navigation }) {
                   <Text style={styles.textButtom}>-</Text>
                 </TouchableOpacity>
               </View>
-              <Text style={{ textDecorationLine: "underline" }}>{number} de {quantity}</Text>
+              <Text style={{ textDecorationLine: "underline" }}>
+                {number} de {quantity}
+              </Text>
               <View style={styles.container}>
                 <TouchableOpacity
                   onPress={() => {
@@ -804,19 +808,36 @@ export default function Store({ navigation }) {
             justifyContent: "center",
           }}
         >
-          <Text style={{ fontSize: 25, fontWeight: "bold" }}>
+          <Text
+            style={{ fontSize: 25, fontWeight: "bold", textAlign: "center" }}
+          >
             {step == 1
               ? "Confirmar Orden"
               : step == 2
-              ? "Escoger ubicacion"
+              ? "Escoger ubicacion de entrega"
               : step == 3
               ? "Agregar un comentario"
               : step == 4
-              ? "Agregar numero de telefono"
+              ? "Agregar un numero de telefono"
               : step == 5
-              ? "Escoger repartidor"
+              ? "Escoger un repartidor"
               : step == 6
               ? "Recivo"
+              : null}
+          </Text>
+          <Text style={{ fontSize: 15, textAlign: "center" }}>
+            {step == 1
+              ? null
+              : step == 2
+              ? "Necesario para poder entregar su pedido"
+              : step == 3
+              ? "Opcional"
+              : step == 4
+              ? "Obligatorio, para poder contactar al cliente"
+              : step == 5
+              ? "Obligatorio, escoja un repartidor"
+              : step == 6
+              ? null
               : null}
           </Text>
 
@@ -949,7 +970,9 @@ export default function Store({ navigation }) {
                 </Text>
               </TouchableOpacity>
             </View>
-
+            <View style={{ justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ fontSize: 15 }}>paso {step} de 6</Text>
+            </View>
             <View style={{ marginHorizontal: 10 }}>
               <TouchableOpacity
                 style={styles.buttom}
