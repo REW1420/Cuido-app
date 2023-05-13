@@ -26,7 +26,7 @@
  <li><a href="https://miro.com/app/board/uXjVMKewcVQ=/">Flujo de pantallas</a></li>
   <li><a href="https://drive.google.com/file/d/14iweJptgmBgx-_u2zQ1GjZQIMYYNVpXd/view?usp=sharing">Manual de usuario</a></li>
   <li><a href="https://drive.google.com/file/d/1pQKFMpbpcIkT7UUYDfsmiM4NDo-2ZTDy/view?usp=sharing">Manual tecnico</a></li>
-  <li><a href=" https://youtu.be/7pQvOAbSZTw">Video demo </a> (calidad mala porque vencieron las bases de datos y lo mejor que grabe quedo asi)</li>
+  <li><a href="https://youtu.be/7pQvOAbSZTw">Video demo </a> (calidad mala porque vencieron las bases de datos y lo mejor que grabe quedo asi)</li>
 
  
 </ul>
