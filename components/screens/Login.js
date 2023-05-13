@@ -25,7 +25,7 @@ import { useEffect } from "react";
 import global from "../utils/global";
 import UserModel from "../MVC/UserModel";
 import LocarUserModel from "../MVC/LocalUserModel";
-const userModel = new UserModel();
+const userModel = new LocarUserModel();
 const localUserModel = new LocarUserModel();
 const { width, height } = Dimensions.get("screen");
 const userID = AsyncStorage.getItem("user_id");

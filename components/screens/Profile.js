@@ -39,8 +39,8 @@ import LocalUserModel from "../MVC/LocalUserModel";
 const height = Dimensions.get("screen").height;
 
 //intance the model to create an object
-const orderModel = new Order();
-const userModel = new UserModel();
+const orderModel = new LocalOrderModel();
+const userModel = new LocalUserModel();
 const localOrderModel = new LocalOrderModel();
 const localUserModel = new LocalUserModel();
 
@@ -234,7 +234,17 @@ export default function Profile({ navigation }) {
   const [newPhoneNumber, setNewPhoneNumber] = useState(0);
 
   const updateUserData = async () => {
-    console.log("?");
+    const newUserDataL = {
+      first_name: newName,
+      second_name: newLastName,
+      phone_number: newPhoneNumber,
+    };
+    await localUserModel
+      .updateUserData(global.user_id, newUserDataL)
+      .then(() => {
+        toggleSettingsModal();
+        showUpdateToast();
+      });
   };
 
   const showUpdateToast = () => {
@@ -608,10 +618,7 @@ export default function Profile({ navigation }) {
                 value={newPhoneNumber}
               />
 
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => updateUserData}
-              >
+              <TouchableOpacity style={styles.button} onPress={updateUserData}>
                 <Text style={styles.button_text}>Actualizar datos</Text>
               </TouchableOpacity>
             </View>

@@ -21,9 +21,10 @@ import { Dimensions } from "react-native";
 import { useState } from "react";
 import { auth } from "../utils/firebase";
 import { useTogglePasswordVisibility } from "../utils/useTogglePasswordVisibility";
+import LocalUserModel from '../MVC/LocalUserModel'
 
 const { width, height } = Dimensions.get("screen");
-const userModel = new UserModel();
+const userModel = new LocalUserModel();
 
 export default function SingUp({ navigation }) {
   //hook for the form
